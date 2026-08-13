@@ -11,7 +11,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8000;
     // console.log("DATABASE_URI exists:", !!process.env.DATABASE_URI);
     await _init_db();
 })();
-
+app.use(express.json());
 app.use("/",router)
 
 app.listen(PORT,()=>{

@@ -3,6 +3,7 @@ import type { createJobRequest, jobs_Response } from "../controller/job_controll
 
 export async function Authentication(req: Request<{}, {}, createJobRequest>, res: Response<jobs_Response>, next: NextFunction) {
     try {
+        req.user = "1";
         next();
     } catch (error: any) {
         console.log(error.message)
