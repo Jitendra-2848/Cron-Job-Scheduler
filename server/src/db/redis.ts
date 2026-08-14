@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 
 const redisUrl = process.env.REDIS_URI;
 
@@ -13,4 +13,5 @@ redis.on("connect", () => {
 
 redis.on("error", (error) => {
     console.error("Redis connection error:", error);
+    process.exit(1);
 });
