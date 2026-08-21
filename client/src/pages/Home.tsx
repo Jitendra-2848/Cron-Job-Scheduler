@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Clock, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
-import { ExecutionChart } from '../components/ExecutionChart';
 import { RecentJobs } from '../components/RecentJobs';
 import { QuickActions } from '../components/QuickActions';
 import { SystemStatus } from '../components/SystemStatus';
@@ -17,12 +16,12 @@ const Home: React.FC = () => {
   const failedJobs = cronJobs.filter(j => j.status === 'failed').length;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Good morning, Jitendra 👋
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -32,7 +31,7 @@ const Home: React.FC = () => {
 
         <button
           onClick={() => navigate('/create-cron')}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-all active:scale-95 shrink-0"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-all active:scale-95 shrink-0 w-full sm:w-auto"
         >
           <PlusCircle className="w-4 h-4" />
           Create Cron Job
@@ -40,7 +39,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* 4 Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Cron Jobs"
           value={totalJobs.toString()}
@@ -84,14 +83,11 @@ const Home: React.FC = () => {
         />
       </div>
 
-      {/* Execution Chart Section */}
-      <ExecutionChart />
+      {/* Quick Actions Grid */}
+      <QuickActions />
 
       {/* Recent Cron Jobs Table */}
       <RecentJobs />
-
-      {/* Quick Actions Grid */}
-      <QuickActions />
 
       {/* Infrastructure System Health Card */}
       <SystemStatus />
