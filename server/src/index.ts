@@ -3,6 +3,7 @@ config({path : ".env"});
 import express from "express";
 import { _init_db } from "./db/pool.js";
 import router from "./routes/jobs.js";
+// import queue from "./queue.ts";
 const app = express();
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8000;
@@ -10,6 +11,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 (async function database(){
     // console.log("DATABASE_URI exists:", !!process.env.DATABASE_URI);
     await _init_db();
+    
 })();
 app.use(express.json());
 app.use("/",router)

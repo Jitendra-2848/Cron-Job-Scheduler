@@ -1,5 +1,5 @@
 export interface jobs_Body {
-
+    
 
 }
 
@@ -24,5 +24,12 @@ export interface createJobRequest {
     cron_expression: string | null,
     payload?: string,
     retries?: string,
-    status?: "active" | "rejected" | "pending"
+    status?: "active" | "rejected" | "pending",
+}
+
+export interface postJobInterface{
+    name: string,
+    url: string,
+    payload: JSON,
+    retries:number | string | null
 }
