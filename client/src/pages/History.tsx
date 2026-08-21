@@ -1,261 +1,226 @@
-import React, { useState } from 'react';
-import { History as HistoryIcon, CheckCircle2, XCircle, Clock, Terminal, Search, Filter } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Filter } from 'lucide-react';
 import { useCron } from '../context/CronContext';
-import { StatCard } from '../components/StatCard';
-import { StatusBadge } from '../components/StatusBadge';
 import { Pagination } from '../components/Pagination';
 
-const HistoryPage: React.FC = () => {
-  const { executionLogs, setSelectedLogForDrawer } = useCron();
+export const HistoryPage: React.FC = () => {
+  const { executionLogs } = useCron();
+  
+  // Selected log ID for detail preview panel
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const filteredLogs = executionLogs.filter((log) => {
-    const matchesQuery =
-      log.jobName.toLowerCase().includes(query.toLowerCase()) ||
-      log.command.toLowerCase().includes(query.toLowerCase()) ||
-      log.id.toLowerCase().includes(query.toLowerCase());
+  const selectedLog = useMemo(() => {
+    return executionLogs.find(l => l.id === selectedLogId) || null;
+  }, [executionLogs, selectedLogId]);
 
-    if (statusFilter === 'all') return matchesQuery;
-    return matchesQuery && log.status.toLowerCase() === statusFilter.toLowerCase();
-  });
+  const filteredLogs = useMemo(() => {
+    return executionLogs.filter((log) => {
+      const matchesQuery =
+        log.jobName.toLowerCase().includes(query.toLowerCase()) ||
+        log.command.toLowerCase().includes(query.toLowerCase()) ||
+        log.id.toLowerCase().includes(query.toLowerCase());
+
+      if (statusFilter === 'all') return matchesQuery;
+      return matchesQuery && log.status.toLowerCase() === statusFilter.toLowerCase();
+    });
+  }, [executionLogs, query, statusFilter]);
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const totalExecutions = executionLogs.length;
-  const successCount = executionLogs.filter(l => l.status === 'success').length;
-  const failedCount = executionLogs.filter(l => l.status === 'failed').length;
-
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-12 max-w-5xl text-xs">
       
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Execution History
+      {/* Page Title */}
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+          History
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Track every cron job execution, view exit codes, and inspect live stdout logs.
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Execution history for all cron jobs.
         </p>
       </div>
 
-      {/* 4 Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        <StatCard
-          title="Total Executions"
-          value={totalExecutions.toLocaleString()}
-          subtitle="All captured logs"
-          icon={<HistoryIcon className="w-5 h-5" />}
-          iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
-          iconColor="text-emerald-600 dark:text-emerald-400"
-        />
-
-        <StatCard
-          title="Successful Executions"
-          value={successCount.toLocaleString()}
-          subtitle={`${((successCount / (totalExecutions || 1)) * 100).toFixed(1)}% success rate`}
-          icon={<CheckCircle2 className="w-5 h-5" />}
-          iconBgColor="bg-emerald-50 dark:bg-emerald-950/40"
-          iconColor="text-emerald-600 dark:text-emerald-400"
-        />
-
-        <StatCard
-          title="Failed Executions"
-          value={failedCount.toLocaleString()}
-          subtitle="Requires attention"
-          icon={<XCircle className="w-5 h-5" />}
-          iconBgColor="bg-rose-50 dark:bg-rose-950/40"
-          iconColor="text-rose-600 dark:text-rose-400"
-        />
-
-        <StatCard
-          title="Average Duration"
-          value="1.8s"
-          subtitle="Fast response time"
-          icon={<Clock className="w-5 h-5" />}
-          iconBgColor="bg-blue-50 dark:bg-blue-950/40"
-          iconColor="text-blue-600 dark:text-blue-400"
-        />
-      </div>
-
-      {/* Filters Toolbar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Search logs by job or command..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-emerald-500 transition-colors"
-          />
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs w-full md:w-auto justify-between">
-            <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-slate-400">Filter:</span>
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-transparent font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden cursor-pointer"
-            >
-              <option value="all">All Logs</option>
-              <option value="success">Successful</option>
-              <option value="failed">Failed</option>
-              <option value="running">Running</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* History Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+      {/* Two Column Layout: Table on Left / Selected Log Details on Right (or full detail block below) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <th className="px-6 py-3.5">Job Name</th>
-                <th className="px-6 py-3.5">Started At</th>
-                <th className="px-6 py-3.5">Duration</th>
-                <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5">Exit Code</th>
-                <th className="px-6 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-              {paginatedLogs.map((log) => (
-                <tr
-                  key={log.id}
-                  onClick={() => setSelectedLogForDrawer(log)}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+        {/* Table & Filters Column */}
+        <div className="lg:col-span-2 space-y-4">
+          
+          {/* Filters Bar */}
+          <div className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="relative w-full sm:w-60">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search logs..."
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-9 pr-4 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-855 text-xs focus:outline-hidden"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="bg-transparent font-semibold text-slate-650 dark:text-slate-350 focus:outline-hidden cursor-pointer"
                 >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
-                        <Terminal className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                          {log.jobName}
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-400">
-                          {log.id}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-300">
-                    {log.startedAt}
-                  </td>
-
-                  <td className="px-6 py-4 text-slate-700 dark:text-slate-200 font-medium">
-                    {log.duration}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <StatusBadge status={log.status} />
-                  </td>
-
-                  <td className="px-6 py-4 font-mono">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      log.exitCode === 0
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
-                        : log.exitCode === -1
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                    }`}>
-                      {log.exitCode}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setSelectedLogForDrawer(log)}
-                      className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 font-semibold text-[11px] transition-colors"
-                    >
-                      View Logs
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card List View */}
-        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-          {paginatedLogs.map((log) => (
-            <div
-              key={log.id}
-              onClick={() => setSelectedLogForDrawer(log)}
-              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer space-y-2.5"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    <Terminal className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white">
-                      {log.jobName}
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {log.id}
-                    </div>
-                  </div>
-                </div>
-                <StatusBadge status={log.status} size="sm" />
-              </div>
-
-              <div className="flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400">
-                <span>{log.startedAt}</span>
-                <span>Duration: {log.duration}</span>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                  log.exitCode === 0
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
-                    : log.exitCode === -1
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
-                    : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                }`}>
-                  Exit Code: {log.exitCode}
-                </span>
-
-                <button
-                  onClick={() => setSelectedLogForDrawer(log)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-[11px]"
-                >
-                  View Logs
-                </button>
+                  <option value="all">Status: All</option>
+                  <option value="success">Success</option>
+                  <option value="failed">Failed</option>
+                  <option value="running">Running</option>
+                </select>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Clean table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <th className="px-4 py-3">TIME</th>
+                    <th className="px-4 py-3">JOB</th>
+                    <th className="px-4 py-3">DURATION</th>
+                    <th className="px-4 py-3">STATUS</th>
+                    <th className="px-4 py-3">TRIGGER</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/65 font-medium">
+                  {paginatedLogs.map((log) => (
+                    <tr
+                      key={log.id}
+                      onClick={() => setSelectedLogId(log.id)}
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition-colors ${
+                        selectedLogId === log.id ? 'bg-[#E8F8F2] dark:bg-emerald-950/20' : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-slate-500 font-mono">
+                        {log.startedAt.split(' ')[1] || log.startedAt}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                        {log.jobName}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-350">
+                        {log.duration}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 font-bold ${
+                          log.status === 'success' ? 'text-emerald-600' : 'text-rose-600'
+                        }`}>
+                          ● {log.status === 'success' ? 'Success' : 'Failed'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-450 dark:text-slate-500 font-semibold">
+                        Scheduled
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredLogs.length}
+              itemsPerPage={itemsPerPage}
+            />
+          </div>
+
         </div>
 
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={filteredLogs.length}
-          itemsPerPage={itemsPerPage}
-        />
+        {/* Right Column: Execution Details Panel */}
+        <div>
+          {selectedLog ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 space-y-4 animate-fade-in">
+              <div className="border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Execution details
+                  </h4>
+                  <span className="font-mono text-[11px] text-slate-400">{selectedLog.id}</span>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  selectedLog.status === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
+                }`}>
+                  ● {selectedLog.status === 'success' ? 'Success' : 'Failed'}
+                </span>
+              </div>
+
+              {/* Execution details parameters */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Started At</span>
+                  <span className="font-mono font-semibold text-slate-850 dark:text-slate-200">{selectedLog.startedAt}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Execution Time</span>
+                  <span className="font-semibold text-slate-850 dark:text-slate-200">{selectedLog.duration}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Trigger Type</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-350">Scheduler</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">HTTP Code</span>
+                  <span className={`font-bold font-mono ${selectedLog.exitCode === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {selectedLog.exitCode === 0 ? '200 OK' : '500 Server Error'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Request & Response payload info */}
+              <div className="space-y-2 border-t border-slate-100 dark:border-slate-850 pt-3">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                    Target Endpoint
+                  </span>
+                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 break-all block mt-1">
+                    POST {selectedLog.command.split(' ')[0] || '/api/backup'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dark Log Viewer */}
+              <div className="space-y-2 border-t border-slate-100 dark:border-slate-850 pt-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                  Console Output Logs
+                </span>
+                <div className="bg-slate-950 rounded border border-slate-850 p-3 font-mono text-[11px] text-slate-200 space-y-1 overflow-x-auto leading-relaxed shadow-inner max-h-48">
+                  {selectedLog.logs.map((logLine, idx) => (
+                    <div key={idx} className="whitespace-pre-wrap break-all">
+                      {logLine}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-6 text-center text-slate-400 italic">
+              Select an execution row from the table to view stdout logs and network triggers.
+            </div>
+          )}
+        </div>
+
       </div>
 
     </div>

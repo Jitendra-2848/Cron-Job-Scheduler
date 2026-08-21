@@ -19,32 +19,25 @@ interface HeaderProps {
   setMobileOpen: (open: boolean) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed, setMobileOpen }) => {
+export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
   const { isDark, toggleTheme } = useTheme();
   const { setSearchModalOpen, user } = useCron();
   const location = useLocation();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Compute breadcrumbs and page title based on active path
   const path = location.pathname;
-  let pageGroup = 'Dashboard';
   let pageTitle = 'Home Overview';
 
   if (path === '/cron-jobs') {
-    pageGroup = 'Management';
     pageTitle = 'Cron Jobs';
   } else if (path === '/create-cron') {
-    pageGroup = 'Management';
     pageTitle = 'Create Cron Job';
   } else if (path === '/history') {
-    pageGroup = 'Management';
     pageTitle = 'Execution History';
   } else if (path === '/profile') {
-    pageGroup = 'Account';
     pageTitle = 'User Profile';
   } else if (path === '/settings') {
-    pageGroup = 'Account';
     pageTitle = 'System Settings';
   }
 
@@ -64,111 +57,85 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed, setMobi
       time: '12:00 AM',
       unread: false,
       type: 'success'
-    },
-    {
-      id: 3,
-      title: 'Daily Report dispatched',
-      desc: 'Sent PDF summary to 24 executive subscribers',
-      time: '9:00 AM',
-      unread: false,
-      type: 'info'
     }
   ];
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 px-4 sm:px-6 flex items-center justify-between transition-colors">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-none">
       
-      {/* Left Navigation Details */}
+      {/* Left Navigation Breadcrumb */}
       <div className="flex items-center gap-3">
-        {/* Toggle Hamburger button */}
+        {/* Toggle Hamburger button for Mobile */}
         <button
-          onClick={() => {
-            if (window.innerWidth < 1024) {
-              setMobileOpen(true);
-            } else {
-              setCollapsed(!collapsed);
-            }
-          }}
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          aria-label="Toggle Navigation Sidebar"
+          onClick={() => setMobileOpen(true)}
+          className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          aria-label="Open Navigation Sidebar"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <span className="text-slate-400 dark:text-slate-500 font-medium hidden sm:inline">
-            {pageGroup}
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+          <span className="text-slate-500 dark:text-slate-400">
+            CronMaster
           </span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 hidden sm:inline" />
-          <span className="font-bold text-slate-900 dark:text-white tracking-tight">
+          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+          <span className="text-slate-900 dark:text-white font-semibold">
             {pageTitle}
           </span>
         </div>
       </div>
 
-      {/* Right Action Icons */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Right Toolbar Action Icons */}
+      <div className="flex items-center gap-2 sm:gap-3.5">
         
-        {/* Search Trigger Button */}
+        {/* Search Trigger Input Button */}
         <button
           onClick={() => setSearchModalOpen(true)}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 text-xs transition-colors"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-400 text-xs transition-colors"
         >
           <Search className="w-4 h-4 text-slate-400" />
-          <span className="hidden sm:inline text-slate-500 dark:text-slate-400 font-normal">
+          <span className="hidden sm:inline text-slate-500 dark:text-slate-400">
             Search cron jobs...
           </span>
-          <span className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-500 dark:text-slate-400 shadow-2xs">
+          <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-400 font-normal">
             ⌘ K
-          </span>
+          </kbd>
         </button>
 
         {/* Notification Bell */}
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded text-slate-450 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             title="Notifications"
           >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white dark:border-slate-900" />
+            <Bell className="w-4.5 h-4.5" />
           </button>
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
-              <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-sm text-slate-900 dark:text-white">Notifications</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                  1 Unread
-                </span>
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-lg z-50 overflow-hidden animate-fade-in">
+              <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+                <span className="font-semibold text-xs text-slate-800 dark:text-white">Notifications</span>
               </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {notifications.map(n => (
-                  <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3">
-                    <div className={`p-1.5 rounded-lg shrink-0 h-fit mt-0.5 ${
-                      n.type === 'error' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                  <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors flex gap-2.5">
+                    <div className={`p-1.5 rounded shrink-0 h-fit mt-0.5 ${
+                      n.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                     }`}>
-                      {n.type === 'error' ? <AlertTriangle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                      {n.type === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{n.title}</p>
-                        <span className="text-[10px] text-slate-400 shrink-0">{n.time}</span>
+                        <p className="font-semibold text-slate-900 dark:text-white truncate">{n.title}</p>
+                        <span className="text-[10px] text-slate-400 shrink-0 ml-1">{n.time}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{n.desc}</p>
                     </div>
                   </div>
                 ))}
-              </div>
-              <div className="p-2 border-t border-slate-200 dark:border-slate-800 text-center bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  Mark all as read
-                </button>
               </div>
             </div>
           )}
@@ -177,16 +144,16 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed, setMobi
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-1.5 rounded text-slate-450 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+          {isDark ? <Sun className="w-4.5 h-4.5 text-amber-500" /> : <Moon className="w-4.5 h-4.5 text-slate-500" />}
         </button>
 
         {/* User Avatar */}
         <button
           onClick={() => navigate('/profile')}
-          className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-500/50 transition-all shrink-0 ml-1"
+          className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-600/30 transition-all shrink-0 ml-1"
           title="User Profile"
         >
           <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />

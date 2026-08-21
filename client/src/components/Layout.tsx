@@ -5,8 +5,6 @@ import { CronProvider } from '../context/CronContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { SearchModal } from './SearchModal';
-import { CronJobDrawer } from './CronJobDrawer';
-import { ExecutionHistoryDrawer } from './ExecutionHistoryDrawer';
 import { ToastContainer } from './Toast';
 
 export const LayoutContent: React.FC = () => {
@@ -37,10 +35,8 @@ export const LayoutContent: React.FC = () => {
         </main>
       </div>
 
-      {/* Global Modals, Drawers & Notifications */}
+      {/* Global Modals, Modals & Notifications */}
       <SearchModal />
-      <CronJobDrawer />
-      <ExecutionHistoryDrawer />
       <ToastContainer />
 
     </div>
