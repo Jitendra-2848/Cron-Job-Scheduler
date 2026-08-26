@@ -9,81 +9,120 @@ const queue = new Queue("cronmaster-jobs", {
     connection: redis,
 });
 
-let client:any;
-(async function init() {
-    client = await pool.connect()
-    await _init_db();
-    console.log("Scheduler service initialized.");
-})();
+const SCHEDULER_LOCK_ID = 1;
+const BATCH_SIZE = 50;
+const TIMEZONE = "Asia/Kolkata";
 
-cron.schedule("* * * * *", async () => {
-    // console.log(`[${new Date().toISOString()}] Cron tick execution started.`);
-    
+async function scheduleDueJobs() {
+    const client = await pool.connect();
+
     try {
-        if(!client){
-            console.log("database error");
-        }
-        const lockResult = await client.query("SELECT pg_try_advisory_lock(1) as has_lock");
-        const hasLock = lockResult.rows[0]?.has_lock;
-        
-        if (!hasLock) {
-            console.log(`[${new Date().toISOString()}] Advisory lock is already held by another instance. Skipping tick.`);
+        await client.query("BEGIN");
+
+        const lockResult = await client.query(
+            "SELECT pg_try_advisory_xact_lock($1) AS has_lock",
+            [SCHEDULER_LOCK_ID]
+        );
+
+        if (!lockResult.rows[0]?.has_lock) {
+            await client.query("ROLLBACK");
             return;
         }
-        
-        // console.log(`[${new Date().toISOString()}] Advisory lock acquired. Querying due jobs...`);
-        
-        // Query active and due jobs
-        const dueJobsResult = await client.query(
-            `SELECT * FROM jobs WHERE status = 'active' AND next_run_at <= NOW()`
+
+        const result = await client.query(
+            `
+            SELECT
+                id,
+                name,
+                cron_expression,
+                retries,
+                next_run_at
+            FROM jobs
+            WHERE status = 'active'
+              AND next_run_at <= NOW()
+            ORDER BY next_run_at
+            LIMIT $1
+            `,
+            [BATCH_SIZE]
         );
-        
-        const dueJobs = dueJobsResult.rows;
-        console.log(`Found ${dueJobs.length} due jobs.`);
-        
-        for (const job of dueJobs) {
-            console.log(`Scheduling Job ID: ${job.id} (${job.name})`);
-            
-            // Push job ID to BullMQ
-            await queue.add(
-                "execute-job",
-                { jobId: job.id },
-                {
-                    attempts: (job.retries ?? 3) + 1,
-                    backoff: {
-                        type: "exponential",
-                        delay: 2000,
-                    },
-                    // Unique job ID to prevent duplicate processing of the same scheduling tick
-                    jobId: `job-${job.id}-${Date.now()}`
-                }
-            );
-            
-            // Recalculate next execution time
-            let nextRunAt: Date;
+
+        const jobs = result.rows;
+
+        if (jobs.length === 0) {
+            await client.query("COMMIT");
+            return;
+        }
+        const bullmqJobs = [];
+
+        for (const job of jobs) {
             try {
-                nextRunAt = CronExpressionParser.parse(job.cron_expression, {
-                    currentDate: new Date(),
-                    tz: "Asia/Kolkata"
-                }).next().toDate();
-                
-                await client.query("UPDATE jobs SET next_run_at = $1 WHERE id = $2", [nextRunAt, job.id]);
-                console.log(`Updated next_run_at for job ${job.id} to ${nextRunAt.toISOString()}`);
-            } catch (err: any) {
-                console.error(`❌ Failed to parse cron expression or update next run time for job ${job.id}:`, err.message);
+                const nextRunAt = CronExpressionParser
+                    .parse(job.cron_expression, {
+                        currentDate: new Date(),
+                        tz: TIMEZONE,
+                    })
+                    .next()
+                    .toDate();
+
+                await client.query(
+                    `
+                    UPDATE jobs
+                    SET next_run_at = $1
+                    WHERE id = $2
+                    `,
+                    [nextRunAt, job.id]
+                );
+
+                bullmqJobs.push({
+                    name: job.name || "execute-job",
+                    data: {
+                        jobId: job.id,
+                    },
+                    opts: {
+                        attempts: (job.retries ?? 3) + 1,
+                        backoff: {
+                            type: "exponential",
+                            delay: 2000,
+                        },
+
+                        // Same scheduled occurrence = same BullMQ ID
+                        jobId: `job-${job.id}-${job.next_run_at.getTime()}`,
+                    },
+                });
+            } catch (error: any) {
+                console.error(
+                    `Failed to schedule job ${job.id}:`,
+                    error.message
+                );
             }
         }
-        
-        // Release advisory lock
-        await client.query("SELECT pg_advisory_unlock(1)");
-        // console.log(`[${new Date().toISOString()}] Advisory lock released.`);
-        
-    } catch (error: any) {
-        console.log(error);
-        console.error("❌ Error in scheduler tick execution:", error.message);
-    } finally {
-        if (client) {
-            client.release();
+
+        await client.query("COMMIT");
+
+        if (bullmqJobs.length > 0) {
+            await queue.addBulk(bullmqJobs);
         }
+
+        console.log(`Scheduled ${bullmqJobs.length} jobs.`);
+    } catch (error) {
+        try {
+            await client.query("ROLLBACK");
+        } catch {
+            console.log("Rollback failed");
+        }
+
+        console.error("Scheduler tick failed:", error);
+    } finally {
+        client.release();
     }
-});
+}
+
+(async function init() {
+    await _init_db();
+
+    console.log("Scheduler service initialized.");
+
+    cron.schedule("* * * * *", async () => {
+        await scheduleDueJobs();
+    });
+})();
