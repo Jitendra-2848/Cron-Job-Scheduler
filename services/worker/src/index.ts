@@ -5,14 +5,15 @@ import { redis } from "./db/redis.js";
 
 (async function init() {
     await _init_db();
-    console.log("Worker service initialized. Listening to 'cronmaster-jobs' queue...");
+    // console.log("Worker service initialized. Listening to 'cronmaster-jobs' queue...");
 })();
 
 const worker = new Worker<{ jobId: number }>(
     "cronmaster-jobs",
     async (bullJob) => {
         const { jobId } = bullJob.data;
-        console.log(`\n[Attempt ${bullJob.attemptsMade + 1}] Processing job ID: ${jobId}`);
+        console.log(bullJob.attemptsMade);
+        // console.log(`\n[Attempt ${bullJob.attemptsMade + 1}] Processing job ID: ${jobId}`);
 
         // Fetch job details from database
         const jobResult = await pool.query("SELECT * FROM jobs WHERE id = $1", [jobId]);
@@ -22,14 +23,15 @@ const worker = new Worker<{ jobId: number }>(
         }
 
         const dbJob = jobResult.rows[0];
+        console.log(dbJob);
         const { name, method, url, payload } = dbJob;
 
-        console.log("==============================");
-        console.log(`Job ID : ${dbJob.id}`);
-        console.log(`Name   : ${name}`);
-        console.log(`Method : ${method}`);
-        console.log(`URL    : ${url}`);
-        console.log("==============================");
+        // console.log("==============================");
+        // console.log(`Job ID : ${dbJob.id}`);
+        // console.log(`Name   : ${name}`);
+        // console.log(`Method : ${method}`);
+        // console.log(`URL    : ${url}`);
+        // console.log("==============================");
 
         let body: string | undefined;
         if (payload !== undefined && payload !== null) {
@@ -51,6 +53,7 @@ const worker = new Worker<{ jobId: number }>(
                 },
                 body: method === "GET" || method === "DELETE" ? null : body ?? null,
             });
+            console.log(await response.json())
 
             responseCode = response.status;
             const contentType = response.headers.get("content-type");
@@ -68,7 +71,7 @@ const worker = new Worker<{ jobId: number }>(
 
             if (!response.ok) {
                 status = "failed";
-                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                errorMessage = `HTTP ${response.status}: ${response.statusText} djhf`;
                 throw new Error(errorMessage);
             }
 
@@ -89,7 +92,7 @@ const worker = new Worker<{ jobId: number }>(
             errorMessage = error.message || "Unknown error";
             const duration = Date.now() - startTime;
 
-            console.error(`❌ HTTP request failed: ${errorMessage}`);
+            console.error(`❌ HTTP request failed: ${error}`);
 
             // Record failed execution
             await pool.query(
