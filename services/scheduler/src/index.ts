@@ -87,7 +87,14 @@ async function scheduleDueJobs() {
 
                         // Same scheduled occurrence = same BullMQ ID
                         jobId: `job-${job.id}-${job.next_run_at.getTime()}`,
+                    }, removeOnComplete: {
+                        age: 3600,
+                        count: 1000
                     },
+                    removeOnFail: {
+                        age: 3600 * 24 * 3,
+                        count: 10000
+                    }
                 });
             } catch (error: any) {
                 console.error(
