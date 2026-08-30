@@ -13,10 +13,11 @@ const worker = new Worker<{ jobId: number }>(
         const { jobId } = bullJob.data;
         console.log(`[Attempt ${bullJob.attemptsMade + 1}] Processing job ID: ${jobId}`);
 
+        // Fetch job details from database
         const jobResult = await pool.query("SELECT * FROM jobs WHERE id = $1", [jobId]);
         if (jobResult.rowCount === 0) {
             console.error(`Job with ID ${jobId} not found in database.`);
-            return; 
+            return;
         }
 
         const dbJob = jobResult.rows[0];
@@ -45,7 +46,7 @@ const worker = new Worker<{ jobId: number }>(
 
             responseCode = response.status;
             const contentType = response.headers.get("content-type");
-            
+
             if (contentType?.includes("application/json")) {
                 const json = await response.json();
                 responseBody = JSON.stringify(json);
@@ -61,12 +62,19 @@ const worker = new Worker<{ jobId: number }>(
 
             const duration = Date.now() - startTime;
             console.log(`-> Success in ${duration}ms (Status: ${responseCode})`);
-            
-            await pool.query(
-                `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
-            );
+
+            // Record successful execution
+            // We isolate database log writing in a try-catch to prevent a database error
+            // from causing a retry of an already successful HTTP request.
+            try {
+                await pool.query(
+                    `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
+                );
+            } catch (dbError: any) {
+                console.error("WARNING: Failed to write success execution log to database:", dbError.message);
+            }
 
             return responseBody;
 
@@ -77,11 +85,18 @@ const worker = new Worker<{ jobId: number }>(
 
             console.error(`-> Failed in ${duration}ms (${errorMessage})`);
 
-            await pool.query(
-                `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
-            );
+            // Record failed execution
+            // We isolate database log writing in a try-catch so that if the database is down,
+            // the error logged does not shadow the original HTTP request error.
+            try {
+                await pool.query(
+                    `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
+                );
+            } catch (dbError: any) {
+                console.error("CRITICAL: Failed to write failure execution log to database:", dbError.message);
+            }
             
             throw error; 
         }

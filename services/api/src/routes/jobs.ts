@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get("/jobs",Authentication,jobs);
 router.post("/job",Authentication,create_job);
+router.delete("/job_delete",Authentication,);
 router.get("/job/:id",Authentication,job);
 
 
