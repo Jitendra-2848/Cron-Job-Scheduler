@@ -35,6 +35,7 @@ const worker = new Worker<{ jobId: number }>(
         let status: "success" | "failed" = "success";
 
         try {
+            
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -42,6 +43,7 @@ const worker = new Worker<{ jobId: number }>(
                     "Content-Type": "application/json",
                 },
                 body: method === "GET" || method === "DELETE" ? null : body ?? null,
+                signal: AbortSignal.timeout(3000)
             });
 
             responseCode = response.status;

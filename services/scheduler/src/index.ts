@@ -104,12 +104,11 @@ async function scheduleDueJobs() {
             }
         }
 
-        await client.query("COMMIT");
-
+        
         if (bullmqJobs.length > 0) {
             await queue.addBulk(bullmqJobs);
         }
-
+        await client.query("COMMIT");
         console.log(`Scheduled ${bullmqJobs.length} jobs.`);
     } catch (error) {
         try {
