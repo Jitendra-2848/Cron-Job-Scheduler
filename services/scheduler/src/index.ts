@@ -10,7 +10,7 @@ const queue = new Queue("cronmaster-jobs", {
 });
 
 const SCHEDULER_LOCK_ID = 1;
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 5;
 const TIMEZONE = "Asia/Kolkata";
 
 async function scheduleDueJobs() {
@@ -72,7 +72,7 @@ async function scheduleDueJobs() {
                     `,
                     [nextRunAt, job.id]
                 );
-
+                console.log(job.id);
                 bullmqJobs.push({
                     name: job.name || "execute-job",
                     data: {
