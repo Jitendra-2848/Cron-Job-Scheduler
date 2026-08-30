@@ -120,3 +120,12 @@ worker.on("failed", (job, error) => {
 worker.on("error", (error) => {
     console.error("Worker error:", error.message);
 });
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    process.exit(1);
+});

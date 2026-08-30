@@ -104,7 +104,7 @@ async function scheduleDueJobs() {
             }
         }
 
-        
+
         if (bullmqJobs.length > 0) {
             await queue.addBulk(bullmqJobs);
         }
@@ -132,3 +132,12 @@ async function scheduleDueJobs() {
         await scheduleDueJobs();
     });
 })();
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    process.exit(1);
+});
