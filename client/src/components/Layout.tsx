@@ -44,11 +44,6 @@ export const LayoutContent: React.FC = () => {
 };
 
 export const Layout: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <CronProvider>
-        <LayoutContent />
-      </CronProvider>
-    </ThemeProvider>
-  );
+  return <LayoutContent />;
 };
+

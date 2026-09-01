@@ -1,155 +1,195 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Clock, Lock, User, Mail, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
-
-
-
-
 const Register: React.FC = () => {
-    const [username, setUsername] = useState<string>("");
-    const [password, setPassword] = useState<any>("");
-    const [confirm_password, setConfirm_Password] = useState<any>("");
-    const [email, setEmail] = useState<any>("");
-    const [error, setError] = useState<any>("");
-    const [currentScene, setCurrentScene] = useState(0);
+    const navigate = useNavigate();
+    const [username, setUsername] = useState<string>('');
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
+    const [error, setError] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        const durations = [4000, 3000, 3500, 5000, 7000]; // ms for each SVG
-
-        const timer = setTimeout(() => {
-            setCurrentScene((prev) => (prev + 1) % 5);
-        }, durations[currentScene]);
-
-        return () => clearTimeout(timer);
-    }, [currentScene]);
-
-
-    useEffect(() => {
-        if (!error) {
-            return;
-        }
+        if (!error) return;
         toast.error(error);
-        setError("");
-    }, [error])
+        setError('');
+    }, [error]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
         if (!username || !password || !email) {
-            toast.error("All fields are required!")
+            toast.error('All fields are required!');
             return;
         }
-        if(confirm_password !== password){
-            toast.error("Passwords do not match!")
-            return;
-        }
-        setIsLoading(true);
-        const registerData = {
-            username: username,
-            password: password,
-            email: email
-        }
-        try {
-            const response = await api.post("/auth/register", registerData);
 
-            console.log(response.data);
+        if (password !== confirmPassword) {
+            toast.error('Passwords do not match!');
+            return;
+        }
+
+        if (password.length < 6) {
+            toast.error('Password must be at least 6 characters long!');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response = await api.post('/auth/register', {
+                username,
+                email,
+                password,
+            });
+
             if (response.status === 201) {
-                toast.success(response.data.message);
+                toast.success(response.data.message || 'Registered successfully!');
+                navigate('/login');
             }
         } catch (err: any) {
-            console.log(err.response);       // Full response
-            console.log(err.response.data);  // { message: "Username is already taken" }
-            console.log(err.response.status); // 400
-            setError(err.response?.data?.message || "Something went wrong");
+            console.error(err.response);
+            const errMsg = err.response?.data?.message || 'Failed to create account';
+            setError(errMsg);
         } finally {
             setIsLoading(false);
         }
-    }
+    };
+
+    const handleGoogleLogin = () => {
+        const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+        window.location.href = `${apiBaseUrl}/auth/google`;
+    };
+
     return (
-        <div className="min-h-screen w-full flex bg-slate-50 ">
-            <div className={`w-full lg:w-1/2 bg-[#fff7f5] flex items-center justify-center px-20`}>
-                <div className="w-full max-w-xl p-8 rounded-3xl ">
-                    <div className="text-center flex flex-col mb-6 mx-auto">
-                        <img className='w-10 mx-auto scale-150 border border-[#2566f3] rounded-full my-2 p-1' src="/Register_Asset/Profile.svg" />
-                        <h1 className="text-3xl font-bold text-slate-900 flex mx-auto">Register
-                        </h1>
-                        <p className="text-sm text-slate-500 mt-1">Select your account type to proceed</p>
+        <div className="min-h-screen w-full flex bg-slate-950 text-slate-100 font-sans">
+            {/* Left Side: Register Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-slate-950">
+                <div className="w-full max-w-md space-y-6">
+                    {/* Mobile Logo Header */}
+                    <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
+                        <Clock className="w-6 h-6 text-emerald-400" />
+                        <span className="font-bold text-xl text-white">CronMaster</span>
                     </div>
 
+                    <div className="text-center space-y-2">
+                        <h1 className="text-3xl font-extrabold text-white tracking-tight">Create Account</h1>
+                        <p className="text-sm text-slate-400">Join CronMaster to start scheduling & monitoring jobs</p>
+                    </div>
 
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                                Username
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <User className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    placeholder="Choose a username"
+                                    required
+                                />
+                            </div>
+                        </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4 pr-10 start-0">
                         <div>
-                            <label className="block text-slate-700 text-sm font-medium mb-1">Username</label>
-                            <input
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                                placeholder="Enter your username"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-slate-700 text-sm font-medium mb-1">Email</label>
-                            <input
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                                placeholder="Enter your username"
-                            />
+                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                                Email Address
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <Mail className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    placeholder="name@domain.com"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <div>
-                            <label className="block text-slate-700 text-sm font-medium mb-1">Password</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                                placeholder="Enter your password"
-                            />
+                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                                Password
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <Lock className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    placeholder="Minimum 6 characters"
+                                    required
+                                />
+                            </div>
                         </div>
+
                         <div>
-                            <label className="block text-slate-700 text-sm font-medium mb-1">Confirm Password</label>
-                            <input
-                                type="password"
-                                value={confirm_password}
-                                onChange={(e) => setConfirm_Password(e.target.value)}
-                                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                                placeholder="Enter your password"
-                            />
+                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                                Confirm Password
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                    <Lock className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    placeholder="Re-enter your password"
+                                    required
+                                />
+                            </div>
                         </div>
+
                         <button
                             type="submit"
-                            className={`w-full py-3 px-4 my-2 ${isLoading ? "bg-[#dcffd9]" : "bg-[#14ad3d] hover:bg-[#00d323d6] "} text-white font-semibold rounded-2xl shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden`}
+                            disabled={isLoading}
+                            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer mt-2"
                         >
-                            {
-                                !isLoading ?
-                                    "Register now"
-                                    :
-                                    <img src="/Register_Asset/loading.svg" className='w-5 my-1 scale-[2.5] mx-auto ease-in' />
-                            }
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Creating Account...
+                                </>
+                            ) : (
+                                <>
+                                    Register Now
+                                    <ArrowRight className="w-4 h-4" />
+                                </>
+                            )}
                         </button>
                     </form>
 
                     {/* Social Auth Divider */}
-                    <div className="relative my-6 flex items-center justify-center">
+                    <div className="relative my-4 flex items-center justify-center">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-200"></div>
+                            <div className="w-full border-t border-slate-800" />
                         </div>
-                        <span className="relative bg-white px-4 text-xs uppercase text-slate-400 font-medium">
+                        <span className="relative bg-slate-950 px-4 text-xs uppercase text-slate-500 font-semibold tracking-wider">
                             Or continue with
                         </span>
                     </div>
 
                     {/* Google SSO Button */}
-                    {/* <button
+                    <button
                         type="button"
-                        onClick={() => {
-                            const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
-                            window.location.href = `${apiBaseUrl}/auth/google?role=${role}`;
-                        }}
-                        className="w-full flex items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 active:scale-[0.98] transition-all shadow-sm cursor-pointer"
+                        onClick={handleGoogleLogin}
+                        className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-slate-200 font-semibold text-sm hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                             <g transform="matrix(1, 0, 0, 1, 0, 0)">
@@ -160,58 +200,69 @@ const Register: React.FC = () => {
                             </g>
                         </svg>
                         Sign in with Google
-                    </button> */}
-                    {/* Registration Link */}
-                    <div className="mt-6 text-center text-sm text-slate-500">
+                    </button>
+
+                    {/* Login Link */}
+                    <div className="text-center text-sm text-slate-400">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-semibold text-slate-900 hover:underline">
-                            Login
+                        <Link to="/login" className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline">
+                            Log in
                         </Link>
                     </div>
                 </div>
             </div>
-            <div className="hidden lg:flex lg:w-1/2 relative bg-white justify-center items-center overflow-hidden">
 
-                {currentScene === 0 && (
-                    <img
-                        src="/Register_Asset/thinking.svg"
+            {/* Right Side: Product Visual Showcase */}
+            <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 border-l border-slate-800 flex-col justify-between p-12 overflow-hidden">
+                {/* Background Grid Accent */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30" />
 
-                        className="w-96 scale-[1]"
-                        alt="Driving"
-                    />
-                )}
-                {currentScene === 1 && (
-                    <img
-                        src="/Register_Asset/car.svg"
-                        className="w-96 scale-[1.8]"
-                        alt="Taxi Booking"
-                    />
-                )}
-                {currentScene === 2 && (
-                    <img
-                        src="/Register_Asset/cortisol.svg"
-                        className="w-96 scale-[2]"
-                        alt="Taxi Booking"
-                    />
-                )}
-                {currentScene === 3 && (
-                    <img
-                        src="/Register_Asset/Car Rush.svg"
-                        className="w-96 scale-[2]"
-                        alt="Taxi Booking"
-                    />
-                )}
-                {currentScene === 4 && (
-                    <img
-                        src="/Register_Asset/Tourists.svg"
-                        className="w-96 scale-[2]"
-                        alt="Taxi Booking"
-                    />
-                )}
+                {/* Top Header */}
+                <div className="relative z-10 flex items-center justify-end gap-2">
+                    <span className="text-xs text-slate-400">Ready to start scheduling?</span>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        Free Developer Tier
+                    </span>
+                </div>
 
+                {/* Center Content */}
+                <div className="relative z-10 my-auto space-y-6 max-w-lg">
+                    <div className="space-y-3">
+                        <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
+                            Build, Schedule & Monitor Webhooks in Seconds
+                        </h2>
+                        <p className="text-sm text-slate-400">
+                            Say goodbye to flaky server crontabs. CronMaster handles scheduling, retries, logs, and notifications.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-3 text-sm text-slate-300">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>Standard 5-part cron syntax expression support</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-300">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>Automated exponential backoff retries on failed webhooks</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-300">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>HTTP Method configuration (GET, POST, PUT, DELETE) with custom JSON payloads</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-300">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>PostgreSQL persistence & Redis BullMQ worker queue</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="relative z-10 text-xs text-slate-500">
+                    &copy; {new Date().getFullYear()} CronMaster. All rights reserved.
+                </div>
             </div>
         </div>
     );
-}
+};
 
-export default Register
+export default Register;

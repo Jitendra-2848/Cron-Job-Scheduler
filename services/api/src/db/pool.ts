@@ -23,7 +23,10 @@ export async function _init_db() {
                 created_at TIMESTAMP DEFAULT NOW()
             );
 
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255);
+            ALTER TABLE users ALTER COLUMN name DROP NOT NULL;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(255);
+            ALTER TABLE users ALTER COLUMN username DROP NOT NULL;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
             ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT;

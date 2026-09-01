@@ -20,19 +20,19 @@ const RegisterService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Password must be at least 6 characters long" });
         }
 
-        // Check if username already exists
-        const userCheck = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+        // Check if username or email already exists
+        const userCheck = await pool.query("SELECT * FROM users WHERE username = $1 OR (email = $2 AND email IS NOT NULL)", [username, email || '']);
         if (userCheck.rows.length > 0) {
-            return res.status(400).json({ message: "Username is already taken" });
+            return res.status(400).json({ message: "Username or email is already taken" });
         }
 
         // Hash the password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Insert into database
+        // Insert into database (populating name and username)
         const result = await pool.query(
-            "INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
+            "INSERT INTO users ( username, password, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
             [username, hashedPassword, email || null]
         );
 

@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { Clock, ShieldCheck, Zap, Activity, Lock, User, ArrowRight, Loader2, Sun, Moon, Monitor } from 'lucide-react';
 import { api } from '../lib/api';
-
-type UserRole = 'Customer' | 'Driver';
+import { useTheme } from '../context/ThemeContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState<UserRole>('Customer');
+  const { theme, toggleTheme, isDark } = useTheme();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<any>('');
+  const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [currentScene, setCurrentScene] = useState(0);
-
 
   useEffect(() => {
     if (!error) return;
@@ -21,32 +19,21 @@ const Login: React.FC = () => {
     setError('');
   }, [error]);
 
-  useEffect(() => {
-    const durations = [2000, 4900, 9000, 3000]; // ms for each SVG
-
-    const timer = setTimeout(() => {
-      setCurrentScene((prev) => (prev + 1) % 4);
-    }, durations[currentScene]);
-
-    return () => clearTimeout(timer);
-  }, [currentScene]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!username || !password) {
-      toast.error('All fields are required!');
+      toast.error('Username and password are required!');
       return;
     }
+
     setIsLoading(true);
-    const loginData = {
-      username,
-      password,
-      role, 
-    };
 
     try {
-      const response = await api.post('/auth/login', loginData);
+      const response = await api.post('/auth/login', {
+        username,
+        password,
+      });
 
       if (response.status === 200) {
         toast.success(response.data.message || 'Logged in successfully!');
@@ -54,130 +41,191 @@ const Login: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err.response);
-      toast.error(err.response?.data?.message);
-      setError(err.response?.data?.message || 'Something went wrong');
+      const errMsg = err.response?.data?.message || 'Invalid username or password';
+      setError(errMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGoogleLogin = () => {
+    const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+    window.location.href = `${apiBaseUrl}/auth/google`;
+  };
+
   return (
-    <div className="min-h-screen w-full flex bg-slate-50">
-      {/* Left Side: Brand Visual/Image Banner */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-white justify-center items-center overflow-hidden">
+    <div className="min-h-screen w-full flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans">
+      {/* Left Side: CronMaster Product Branding Showcase */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 text-slate-100 border-r border-slate-800 flex-col justify-between p-12 overflow-hidden">
+        {/* Background Grid Accent */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30" />
+        
+        {/* Top Header Logo */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-extrabold text-xl tracking-tight text-white">CronMaster</span>
+            <span className="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+              Distributed Engine
+            </span>
+          </div>
+        </div>
 
-        {currentScene === 0 && (
-          <img
-            src="/Login_Asset/driving.svg"
-            className="w-96 scale-[1.5]"
-            alt="Driving"
-          />
-        )}
+        {/* Center Feature Showcase */}
+        <div className="relative z-10 my-auto space-y-6 max-w-lg">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
+              Distributed Task Scheduler & Execution Engine
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              High-concurrency webhook management, automated retries, and real-time execution monitoring for dev teams.
+            </p>
+          </div>
 
-        {currentScene === 1 && (
-          <img
-            src="/Login_Asset/taxi app.svg"
-            className="w-96 scale-[1.5]"
-            alt="Taxi App"
-          />
-        )}
+          <div className="grid grid-cols-1 gap-3.5 pt-2">
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-xs">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Sub-Millisecond Queue Concurrency</h3>
+                <p className="text-xs text-slate-400 mt-0.5">BullMQ and Redis worker queues for heavy background workloads.</p>
+              </div>
+            </div>
 
-        {currentScene === 2 && (
-          <img
-            src="/Login_Asset/taxi booking.svg"
-            className="w-96 scale-[2]"
-            alt="Taxi Booking"
-          />
-        )}
-        { currentScene === 3 && (
-          <img
-            src="/Login_Asset/friends.svg"
-            className="w-96 scale-[2]"
-            alt="Taxi Booking"
-          />
-        )}
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-xs">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Telemetry & Live Execution Logs</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Track response latency, HTTP exit codes, and detailed trace logs.</p>
+              </div>
+            </div>
 
+            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 backdrop-blur-xs">
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Fault Tolerant Exponential Retries</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Automatic failovers, dead-letter handling, and exponential backoffs.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 text-xs text-slate-500 flex items-center justify-between">
+          <span>&copy; {new Date().getFullYear()} CronMaster System</span>
+          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Cluster Operational
+          </span>
+        </div>
       </div>
 
-      {/* Right Side: Form Credentials */}
-      <div className={`w-full lg:w-1/2 ${role == "Driver" ? "bg-[#f2fcf0]" : "bg-[#f5fafd]"} flex items-center justify-center`}>
-        <div className="w-full max-w-xl p-8 rounded-3xl ">
-          <div className="text-center flex flex-col mb-6 mx-auto">
-            <h1 className="text-3xl font-bold text-slate-900 flex mx-auto">Login
-              {
-                role === 'Customer' ?
-                  <img className='w-10 mx-2 bg-black ' src="/Login_Asset/profile.gif" />
-                  :
-                  <img className='w-10 mx-2 bg-black ' src="/Login_Asset/path.gif" />
-              }
+      {/* Right Side: Login Form with Theme Switcher */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 bg-white dark:bg-slate-950 transition-colors">
+        {/* Top Control Bar with Theme Switcher */}
+        <div className="flex items-center justify-between w-full max-w-md mx-auto">
+          <div className="flex items-center gap-2 lg:hidden">
+            <Clock className="w-6 h-6 text-emerald-500" />
+            <span className="font-bold text-lg text-slate-900 dark:text-white">CronMaster</span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-xs"
+              title="Click to cycle theme (Light -> Dark -> System)"
+            >
+              {theme === 'light' && <Sun className="w-4 h-4 text-amber-500" />}
+              {theme === 'dark' && <Moon className="w-4 h-4 text-emerald-400" />}
+              {theme === 'system' && <Monitor className="w-4 h-4 text-blue-400" />}
+              <span className="capitalize">{theme} Mode</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Form Container */}
+        <div className="w-full max-w-md mx-auto my-auto py-8 space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Sign In to CronMaster
             </h1>
-            <p className="text-sm text-slate-500 mt-1">Select your account type to proceed</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Access your control panel to manage cron jobs & workflows
+            </p>
           </div>
 
-          {/* Role Selector Tabs (Customer vs Driver) */}
-          <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => setRole('Customer')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${role === 'Customer'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900'
-                }`}
-            >
-              Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('Driver')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${role === 'Driver'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900'
-                }`}
-            >
-              Driver
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-slate-700 text-sm font-medium mb-1">Username</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                placeholder="Enter your username"
-              />
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                  <User className="w-4.5 h-4.5" />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-slate-700 text-sm font-medium mb-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
-                placeholder="Enter your password"
-              />
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                  <Lock className="w-4.5 h-4.5" />
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
+                  placeholder="••••••••••••"
+                  required
+                />
+              </div>
             </div>
+
             <button
               type="submit"
-              className={`w-full py-3 px-4 ${isLoading ? "bg-white" : "bg-slate-900 hover:bg-slate-800 "} text-white font-semibold rounded-2xl shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden`}
+              disabled={isLoading}
+              className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
             >
-              {
-                !isLoading ?
-                  `Login as ${role === 'Customer' ? 'Customer' : 'Driver'}`
-                  :
-                  <img src="/Login_Asset/go-kart.gif" className='w-5 scale-[3.5] mx-auto ease-in' />
-              }
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  Sign In to Control Panel
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
-          {/* Social Auth Divider */}
+          {/* Divider */}
           <div className="relative my-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
             </div>
-            <span className="relative bg-white px-4 text-xs uppercase text-slate-400 font-medium">
+            <span className="relative bg-white dark:bg-slate-950 px-4 text-xs uppercase text-slate-400 dark:text-slate-500 font-semibold tracking-wider">
               Or continue with
             </span>
           </div>
@@ -185,11 +233,8 @@ const Login: React.FC = () => {
           {/* Google SSO Button */}
           <button
             type="button"
-            onClick={() => {
-              const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
-              window.location.href = `${apiBaseUrl}/auth/google?role=${role}`;
-            }}
-            className="w-full flex items-center justify-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 active:scale-[0.98] transition-all shadow-sm cursor-pointer"
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-[0.98] transition-all shadow-xs cursor-pointer"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
               <g transform="matrix(1, 0, 0, 1, 0, 0)">
@@ -201,13 +246,19 @@ const Login: React.FC = () => {
             </svg>
             Sign in with Google
           </button>
+
           {/* Registration Link */}
-          <div className="mt-6 text-center text-sm text-slate-500">
+          <div className="text-center text-sm text-slate-500 dark:text-slate-400">
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold text-slate-900 hover:underline">
-              Register
+            <Link to="/register" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              Create an account
             </Link>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="w-full max-w-md mx-auto text-center text-xs text-slate-400 dark:text-slate-600">
+          CronMaster Cloud &bull; Secure Authentication Engine
         </div>
       </div>
     </div>
@@ -215,3 +266,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+

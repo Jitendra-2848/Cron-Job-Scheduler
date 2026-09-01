@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem('cronmaster_theme');
-    return (saved as Theme) || 'light';
+    return (saved as Theme) || 'system';
   });
 
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -23,21 +23,32 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
     localStorage.setItem('cronmaster_theme', theme);
 
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      setIsDark(true);
-    } else if (theme === 'light') {
-      root.classList.remove('dark');
-      setIsDark(false);
-    } else {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (systemDark) {
+    const applyTheme = () => {
+      if (theme === 'dark') {
         root.classList.add('dark');
         setIsDark(true);
-      } else {
+      } else if (theme === 'light') {
         root.classList.remove('dark');
         setIsDark(false);
+      } else {
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (systemDark) {
+          root.classList.add('dark');
+          setIsDark(true);
+        } else {
+          root.classList.remove('dark');
+          setIsDark(false);
+        }
       }
+    };
+
+    applyTheme();
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme();
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
   }, [theme]);
 
@@ -46,7 +57,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleTheme = () => {
-    setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+    setThemeState(prev => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'system';
+      return 'light';
+    });
   };
 
   return (
@@ -63,3 +78,4 @@ export const useTheme = (): ThemeContextType => {
   }
   return context;
 };
+
