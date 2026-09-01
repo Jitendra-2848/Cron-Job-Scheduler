@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useCron } from '../context/CronContext';
+import { FeatureModal } from '../components/FeatureModal';
 
 type Tab = 'general' | 'notifications' | 'appearance' | 'scheduler';
 
@@ -17,6 +18,11 @@ const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const { showToast } = useCron();
   const [activeTab, setActiveTab] = useState<Tab>('general');
+  const [modalFeature, setModalFeature] = useState<{ isOpen: boolean; name: string; desc: string }>({
+    isOpen: false,
+    name: '',
+    desc: ''
+  });
 
   // Form State
   const [timezone, setTimezone] = useState('UTC');
@@ -150,7 +156,14 @@ const Settings: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setEmailAlerts(!emailAlerts)}
+                  onClick={() => {
+                    setEmailAlerts(!emailAlerts);
+                    setModalFeature({
+                      isOpen: true,
+                      name: "Email Alert Routing",
+                      desc: "Automated SMTP & Webhook email notifications are under active integration for the upcoming CronMaster release."
+                    });
+                  }}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
                     emailAlerts ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
@@ -194,7 +207,14 @@ const Settings: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setWeeklyReports(!weeklyReports)}
+                  onClick={() => {
+                    setWeeklyReports(!weeklyReports);
+                    setModalFeature({
+                      isOpen: true,
+                      name: "Weekly Digest & Reporting",
+                      desc: "Weekly executive summary PDF & email exports will be available in the upcoming CronMaster v1.1 release."
+                    });
+                  }}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
                     weeklyReports ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
@@ -328,6 +348,13 @@ const Settings: React.FC = () => {
         </div>
 
       </div>
+
+      <FeatureModal
+        isOpen={modalFeature.isOpen}
+        onClose={() => setModalFeature(prev => ({ ...prev, isOpen: false }))}
+        featureName={modalFeature.name}
+        description={modalFeature.desc}
+      />
 
     </div>
   );

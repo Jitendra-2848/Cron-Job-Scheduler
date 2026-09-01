@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Shield, Laptop, Save } from 'lucide-react';
 import { useCron } from '../context/CronContext';
+import { FeatureModal } from '../components/FeatureModal';
 
 const Profile: React.FC = () => {
   const { user, updateUserProfile } = useCron();
@@ -9,7 +10,8 @@ const Profile: React.FC = () => {
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
   const [timezone, setTimezone] = useState(user.timezone);
-  const [twoFactor, setTwoFactor] = useState(user.twoFactorEnabled);
+  const [twoFactor] = useState(user.twoFactorEnabled);
+  const [show2FAModal, setShow2FAModal] = useState(false);
 
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -190,7 +192,9 @@ const Profile: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setTwoFactor(!twoFactor)}
+              onClick={() => {
+                setShow2FAModal(true);
+              }}
               className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
                 twoFactor ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
               }`}
@@ -214,10 +218,10 @@ const Profile: React.FC = () => {
                   <Laptop className="w-5 h-5 text-emerald-500" />
                   <div>
                     <div className="font-semibold text-slate-900 dark:text-white">
-                      Chrome on Windows 11 (Current Device)
+                      Chrome on Current Device
                     </div>
                     <div className="text-[11px] text-slate-400">
-                      IP: 192.168.1.45 • New York, USA
+                      Active Session &bull; Managed via Session Cookies
                     </div>
                   </div>
                 </div>
@@ -249,6 +253,14 @@ const Profile: React.FC = () => {
         </div>
 
       </form>
+
+      {/* 2FA Feature Modal Pop-Up */}
+      <FeatureModal
+        isOpen={show2FAModal}
+        onClose={() => setShow2FAModal(false)}
+        featureName="Two-Factor Authentication (2FA)"
+        description="2FA authenticator verification is currently in development and will be enabled in the upcoming CronMaster release."
+      />
 
     </div>
   );

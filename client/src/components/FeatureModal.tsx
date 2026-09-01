@@ -4,7 +4,6 @@ import { ShieldAlert, X, Sparkles, CheckCircle } from 'lucide-react';
 interface FeatureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
   description?: string;
   featureName?: string;
 }
@@ -12,7 +11,6 @@ interface FeatureModalProps {
 export const FeatureModal: React.FC<FeatureModalProps> = ({
   isOpen,
   onClose,
-  title = "Feature Under Development",
   featureName = "Two-Factor Authentication (2FA)",
   description = "This advanced security feature is currently being integrated and will be enabled in the upcoming CronMaster release."
 }) => {
