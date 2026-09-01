@@ -7,14 +7,19 @@ import CreateCron from './pages/CreateCron';
 import HistoryPage from './pages/History';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import Register from './pages/Register';
+import Login from './pages/Login';
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/dashboard" element={<Home />} />
           <Route path="/cron-jobs" element={<CronJobs />} />
           <Route path="/create-cron" element={<CreateCron />} />
           <Route path="/history" element={<HistoryPage />} />

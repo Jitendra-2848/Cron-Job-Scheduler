@@ -8,5 +8,10 @@
     "worker": "npm --prefix services/worker run dev",
     "client": "npm --prefix client run dev",
     "test": "node services/test/index.js"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0"
   }
 }

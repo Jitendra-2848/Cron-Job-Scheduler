@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CronJob, ExecutionLog, SystemService, UserProfile, CronStatus } from '../types/cron';
-import { fetchJobs, createJob, updateJob, deleteJob, fetchMetrics, type BackendJob } from '../services/api';
+import { fetchJobs, createJob, updateJob, deleteJob, type BackendJob } from '../services/api';
 
 const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [
   {

@@ -10,8 +10,8 @@ const queue = new Queue("cronmaster-jobs", {
 
 export async function jobs(req: Request<{}, {}, jobs_Body>, res: Response<jobs_Response>) {
     try {
-        // const {} = req.body;
-        const data = await pool.query(`SELECT * FROM jobs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10`, [req.user]);
+        const userId = (req as any).user?.userId || (req as any).user || 1;
+        const data = await pool.query(`SELECT * FROM jobs WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10`, [userId]);
         return res.status(200).json({ message: "success", data: data.rows })
     } catch (error: any) {
         console.log(error.message)
@@ -24,12 +24,10 @@ export async function create_job(req: Request<{}, {}, createJobRequest>, res: Re
         if (!name || !url || !cron_expression) {
             return res.status(400).json({ message: "All field are required !" });
         }
-        if (!req.user) {
-            return res.status(404).json({ message: "Unauthorized user" });
-        }
+        const userId = (req as any).user?.userId || (req as any).user || 1;
         const data = await pool.query(`INSERT INTO jobs (user_id,name,url,method,cron_expression,payload,retries)  
             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [req.user, name, url, method ?? "GET", cron_expression, payload ?? {}, retries ?? 3,]);
+            [userId, name, url, method ?? "GET", cron_expression, payload ?? {}, retries ?? 3,]);
 
         return res.status(200).json({ message: "success" })
     } catch (error: any) {

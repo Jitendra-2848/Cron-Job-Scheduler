@@ -42,8 +42,8 @@ async function scheduleDueJobs() {
                 next_run_at
             FROM jobs
             WHERE status = 'active'
-              AND next_run_at <= NOW()
-            ORDER BY next_run_at
+              AND (next_run_at <= NOW() OR next_run_at IS NULL)
+            ORDER BY next_run_at NULLS FIRST
             LIMIT $1
             `,
             [BATCH_SIZE]

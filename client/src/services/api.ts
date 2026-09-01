@@ -24,8 +24,56 @@ export interface BackendMetrics {
   };
 }
 
+export async function loginUser(username: string, password: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Login failed');
+  }
+  return data;
+}
+
+export async function registerUser(username: string, password: string, email?: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ username, password, email }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Registration failed');
+  }
+  return data;
+}
+
+export async function logoutUser(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  return await res.json();
+}
+
+export async function fetchMeUser(): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error('Not authenticated');
+  }
+  return await res.json();
+}
+
 export async function fetchJobs(): Promise<BackendJob[]> {
-  const res = await fetch(`${API_BASE_URL}/jobs`);
+  const res = await fetch(`${API_BASE_URL}/jobs`, {
+    credentials: 'include',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch jobs: ${res.statusText}`);
   }
@@ -34,7 +82,9 @@ export async function fetchJobs(): Promise<BackendJob[]> {
 }
 
 export async function fetchJobById(id: string | number): Promise<BackendJob> {
-  const res = await fetch(`${API_BASE_URL}/job/${id}`);
+  const res = await fetch(`${API_BASE_URL}/job/${id}`, {
+    credentials: 'include',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch job ${id}: ${res.statusText}`);
   }
@@ -53,10 +103,12 @@ export async function createJob(jobData: {
   const res = await fetch(`${API_BASE_URL}/job`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(jobData),
   });
   if (!res.ok) {
-    throw new Error(`Failed to create job: ${res.statusText}`);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Failed to create job: ${res.statusText}`);
   }
   return await res.json();
 }
@@ -76,6 +128,7 @@ export async function updateJob(
   const res = await fetch(`${API_BASE_URL}/job/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(jobData),
   });
   if (!res.ok) {
@@ -87,6 +140,7 @@ export async function updateJob(
 export async function deleteJob(id: string | number): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/job/${id}`, {
     method: 'DELETE',
+    credentials: 'include',
   });
   if (!res.ok) {
     throw new Error(`Failed to delete job ${id}: ${res.statusText}`);
@@ -95,7 +149,9 @@ export async function deleteJob(id: string | number): Promise<any> {
 }
 
 export async function fetchMetrics(): Promise<BackendMetrics> {
-  const res = await fetch(`${API_BASE_URL}/metrics`);
+  const res = await fetch(`${API_BASE_URL}/metrics`, {
+    credentials: 'include',
+  });
   if (!res.ok) {
     throw new Error(`Failed to fetch metrics: ${res.statusText}`);
   }
