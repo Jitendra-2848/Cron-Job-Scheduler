@@ -96,3 +96,74 @@ export async function delete_job(req: Request, res: Response) {
         client.release();
     }
 }
+
+export async function update_job(req: Request<{ id: string }, {}, Partial<createJobRequest>>, res: Response) {
+    const id = req.params.id;
+    const { name, url, method, cron_expression, payload, retries } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const data = await client.query(
+            `UPDATE jobs 
+             SET name = COALESCE($1, name),
+                 url = COALESCE($2, url),
+                 method = COALESCE($3, method),
+                 cron_expression = COALESCE($4, cron_expression),
+                 payload = COALESCE($5, payload),
+                 retries = COALESCE($6, retries)
+             WHERE id = $7 RETURNING *`,
+            [name, url, method, cron_expression, payload, retries, id]
+        );
+
+        if (data.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ message: "Job not found" });
+        }
+
+        const updatedJob = data.rows[0];
+
+        // Invalidate GET cache
+        await redis.del(`job:${id}`);
+
+        // Sync pending BullMQ jobs in Redis memory
+        const jobs = await queue.getJobs(["waiting", "delayed"]);
+        for (const job of jobs) {
+            if (job.data.jobId === parseInt(id)) {
+                await job.updateData({
+                    ...job.data,
+                    name: updatedJob.name,
+                    url: updatedJob.url,
+                    method: updatedJob.method,
+                    payload: updatedJob.payload,
+                });
+            }
+        }
+
+        await client.query("COMMIT");
+        return res.status(200).json({ message: "Job updated and pending queue synced successfully.", data: updatedJob });
+    } catch (error: any) {
+        await client.query("ROLLBACK");
+        return res.status(500).json({ message: "internal server error", error: error.message });
+    } finally {
+        client.release();
+    }
+}
+
+export async function get_metrics(req: Request, res: Response) {
+    try {
+        const counts = await queue.getJobCounts("waiting", "active", "completed", "failed", "delayed");
+        return res.status(200).json({
+            status: "success",
+            timestamp: new Date().toISOString(),
+            metrics: {
+                waiting_queue_depth: counts.waiting,
+                active_concurrency_load: counts.active,
+                failed_job_count: counts.failed,
+                completed_job_count: counts.completed,
+                delayed_job_count: counts.delayed,
+            }
+        });
+    } catch (error: any) {
+        return res.status(500).json({ message: "failed to fetch queue metrics", error: error.message });
+    }
+}

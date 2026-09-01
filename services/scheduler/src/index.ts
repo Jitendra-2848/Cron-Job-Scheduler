@@ -34,6 +34,9 @@ async function scheduleDueJobs() {
             SELECT
                 id,
                 name,
+                url,
+                method,
+                payload,
                 cron_expression,
                 retries,
                 next_run_at
@@ -77,6 +80,10 @@ async function scheduleDueJobs() {
                     name: job.name || "execute-job",
                     data: {
                         jobId: job.id,
+                        name: job.name,
+                        url: job.url,
+                        method: job.method || "GET",
+                        payload: job.payload,
                     },
                     opts: {
                         attempts: (job.retries ?? 3) + 1,
@@ -87,13 +94,14 @@ async function scheduleDueJobs() {
 
                         // Same scheduled occurrence = same BullMQ ID
                         jobId: `job-${job.id}-${job.next_run_at.getTime()}`,
-                    }, removeOnComplete: {
-                        age: 3600,
-                        count: 1000
-                    },
-                    removeOnFail: {
-                        age: 3600 * 24 * 3,
-                        count: 10000
+                        removeOnComplete: {
+                            age: 3600,
+                            count: 1000
+                        },
+                        removeOnFail: {
+                            age: 3600 * 24 * 3,
+                            count: 10000
+                        }
                     }
                 });
             } catch (error: any) {
@@ -132,7 +140,7 @@ async function scheduleDueJobs() {
         await scheduleDueJobs();
     });
 })();
-
+ 
 process.on("unhandledRejection", (reason, promise) => {
     console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });

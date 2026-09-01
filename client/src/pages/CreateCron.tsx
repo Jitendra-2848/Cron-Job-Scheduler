@@ -72,6 +72,7 @@ export const CreateCron: React.FC = () => {
       humanSchedule,
       commandType: 'webhook',
       webhookUrl: endpoint,
+      method: method,
       command: `curl -X ${method} ${endpoint} ${headers.map(h => `-H "${h.key}: ${h.value}"`).join(' ')}`,
       status: 'active',
       nextRun: 'In scheduled window',

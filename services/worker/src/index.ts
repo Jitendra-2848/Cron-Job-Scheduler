@@ -7,21 +7,104 @@ import { redis } from "./db/redis.js";
     await _init_db();
 })();
 
-const worker = new Worker<{ jobId: number }>(
-    "cronmaster-jobs",
-    async (bullJob) => {
-        const { jobId } = bullJob.data;
-        console.log(`[Attempt ${bullJob.attemptsMade + 1}] Processing job ID: ${jobId}`);
+interface JobPayload {
+    jobId: number;
+    name?: string;
+    url: string;
+    method?: string;
+    payload?: any;
+}
 
-        // Fetch job details from database
-        const jobResult = await pool.query("SELECT * FROM jobs WHERE id = $1", [jobId]);
-        if (jobResult.rowCount === 0) {
-            console.error(`Job with ID ${jobId} not found in database.`);
-            return;
+interface ExecutionRecord {
+    job_id: number;
+    status: "success" | "failed";
+    response_code: number | null;
+    response_body: string | null;
+    response_time_ms: number;
+    error_message: string | null;
+    attempt_number: number;
+}
+
+// In-Memory Execution Log Buffer to prevent PostgreSQL Write Bottlenecks
+const executionBuffer: ExecutionRecord[] = [];
+const BATCH_SIZE = 10;
+const FLUSH_INTERVAL_MS = 30000; // 30 seconds
+
+function logStructured(level: "info" | "warn" | "error", event: string, data: Record<string, any>) {
+    const logPayload = {
+        timestamp: new Date().toISOString(),
+        level,
+        service: "cronmaster-worker",
+        event,
+        ...data,
+    };
+    if (level === "error") {
+        console.error(JSON.stringify(logPayload));
+    } else {
+        console.log(JSON.stringify(logPayload));
+    }
+}
+
+async function flushExecutionBuffer() {
+    if (executionBuffer.length === 0) return;
+
+    // Atomically drain buffer
+    const recordsToFlush = executionBuffer.splice(0, executionBuffer.length);
+
+    try {
+        const valuePlaceholders: string[] = [];
+        const queryParams: any[] = [];
+        let paramIndex = 1;
+
+        for (const record of recordsToFlush) {
+            valuePlaceholders.push(
+                `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
+            );
+            queryParams.push(
+                record.job_id,
+                record.status,
+                record.response_code,
+                record.response_body,
+                record.response_time_ms,
+                record.error_message,
+                record.attempt_number
+            );
         }
 
-        const dbJob = jobResult.rows[0];
-        const { method, url, payload } = dbJob;
+        const queryText = `
+            INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
+            VALUES ${valuePlaceholders.join(", ")}
+        `;
+
+        await pool.query(queryText, queryParams);
+        logStructured("info", "db_bulk_insert_success", { count: recordsToFlush.length });
+    } catch (dbError: any) {
+        logStructured("error", "db_bulk_insert_failed", { error: dbError.message });
+    }
+}
+
+// Timer to flush execution logs every 30 seconds
+const flushInterval = setInterval(() => {
+    flushExecutionBuffer().catch((err) => logStructured("error", "flush_timer_error", { error: err.message }));
+}, FLUSH_INTERVAL_MS);
+
+function queueExecutionLog(record: ExecutionRecord) {
+    executionBuffer.push(record);
+    if (executionBuffer.length >= BATCH_SIZE) {
+        flushExecutionBuffer().catch((err) => logStructured("error", "flush_size_trigger_error", { error: err.message }));
+    }
+}
+
+const worker = new Worker<JobPayload>(
+    "cronmaster-jobs",
+    async (bullJob) => {
+        const { jobId, name, url, method = "GET", payload } = bullJob.data;
+        const attempt = bullJob.attemptsMade + 1;
+
+        logStructured("info", "job_execution_started", {
+            job: { id: jobId, name, bull_job_id: bullJob.id, attempt },
+            request: { url, method },
+        });
 
         let body: string | undefined;
         if (payload !== undefined && payload !== null) {
@@ -35,7 +118,6 @@ const worker = new Worker<{ jobId: number }>(
         let status: "success" | "failed" = "success";
 
         try {
-            
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -43,7 +125,7 @@ const worker = new Worker<{ jobId: number }>(
                     "Content-Type": "application/json",
                 },
                 body: method === "GET" || method === "DELETE" ? null : body ?? null,
-                signal: AbortSignal.timeout(3000)
+                signal: AbortSignal.timeout(10000)
             });
 
             responseCode = response.status;
@@ -63,20 +145,23 @@ const worker = new Worker<{ jobId: number }>(
             }
 
             const duration = Date.now() - startTime;
-            console.log(`-> Success in ${duration}ms (Status: ${responseCode})`);
 
-            // Record successful execution
-            // We isolate database log writing in a try-catch to prevent a database error
-            // from causing a retry of an already successful HTTP request.
-            try {
-                await pool.query(
-                    `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                    [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
-                );
-            } catch (dbError: any) {
-                console.error("WARNING: Failed to write success execution log to database:", dbError.message);
-            }
+            logStructured("info", "job_execution_completed", {
+                job: { id: jobId, name, bull_job_id: bullJob.id, attempt },
+                request: { url, method },
+                response: { status_code: responseCode, duration_ms: duration },
+            });
+
+            // Queue log for bulk write
+            queueExecutionLog({
+                job_id: jobId,
+                status: "success",
+                response_code: responseCode,
+                response_body: responseBody,
+                response_time_ms: duration,
+                error_message: null,
+                attempt_number: attempt,
+            });
 
             return responseBody;
 
@@ -85,21 +170,24 @@ const worker = new Worker<{ jobId: number }>(
             errorMessage = error.message || "Unknown error";
             const duration = Date.now() - startTime;
 
-            console.error(`-> Failed in ${duration}ms (${errorMessage})`);
+            logStructured("error", "job_execution_failed", {
+                job: { id: jobId, name, bull_job_id: bullJob.id, attempt },
+                request: { url, method },
+                response: { status_code: responseCode, duration_ms: duration },
+                error: { message: errorMessage },
+            });
 
-            // Record failed execution
-            // We isolate database log writing in a try-catch so that if the database is down,
-            // the error logged does not shadow the original HTTP request error.
-            try {
-                await pool.query(
-                    `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                    [dbJob.id, status, responseCode, responseBody, duration, errorMessage, bullJob.attemptsMade + 1]
-                );
-            } catch (dbError: any) {
-                console.error("CRITICAL: Failed to write failure execution log to database:", dbError.message);
-            }
-            
+            // Queue log for bulk write
+            queueExecutionLog({
+                job_id: jobId,
+                status: "failed",
+                response_code: responseCode,
+                response_body: responseBody,
+                response_time_ms: duration,
+                error_message: errorMessage,
+                attempt_number: attempt,
+            });
+
             throw error; 
         }
     },
@@ -110,22 +198,32 @@ const worker = new Worker<{ jobId: number }>(
 );
 
 worker.on("completed", (job) => {
-    console.log(`✅ Job ${job.id} completed`);
+    logStructured("info", "queue_job_completed", { bull_job_id: job.id });
 });
 
 worker.on("failed", (job, error) => {
-    console.log(`❌ Job ${job?.id} failed: ${error.message}`);
+    logStructured("error", "queue_job_failed", { bull_job_id: job?.id, error: error.message });
 });
 
 worker.on("error", (error) => {
-    console.error("Worker error:", error.message);
+    logStructured("error", "worker_system_error", { error: error.message });
 });
 
+async function gracefulShutdown() {
+    clearInterval(flushInterval);
+    logStructured("info", "graceful_shutdown_started", {});
+    await flushExecutionBuffer();
+    process.exit(0);
+}
+
 process.on("unhandledRejection", (reason, promise) => {
-    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+    logStructured("error", "unhandled_rejection", { reason: String(reason) });
 });
 
 process.on("uncaughtException", (error) => {
-    console.error("Uncaught Exception:", error);
-    process.exit(1);
+    logStructured("error", "uncaught_exception", { error: error.message });
+    gracefulShutdown();
 });
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);

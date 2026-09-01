@@ -6,6 +6,7 @@
     "dev": "npm --prefix services/api run dev",
     "scheduler": "npm --prefix services/scheduler run dev",
     "worker": "npm --prefix services/worker run dev",
+    "client": "npm --prefix client run dev",
     "test": "node services/test/index.js"
   }
 }
