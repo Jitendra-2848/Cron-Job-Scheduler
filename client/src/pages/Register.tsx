@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Lock, User, Mail, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Clock, Lock, User, Mail, ArrowRight, Loader2, CheckCircle2, Sun, Moon, Monitor } from 'lucide-react';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
+import { useTheme } from '../context/ThemeContext';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
+    const { theme, setTheme } = useTheme();
     const [username, setUsername] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -64,35 +66,77 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen w-full flex bg-slate-950 text-slate-100 font-sans">
+        <div className="min-h-screen w-full flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans">
             {/* Left Side: Register Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-slate-950">
-                <div className="w-full max-w-md space-y-6">
-                    {/* Mobile Logo Header */}
-                    <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
-                        <Clock className="w-6 h-6 text-emerald-400" />
-                        <span className="font-bold text-xl text-white">CronMaster</span>
+            <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 bg-white dark:bg-slate-950 transition-colors">
+                {/* Top Control Bar with Theme Switcher */}
+                <div className="flex items-center justify-between w-full max-w-md mx-auto">
+                    <div className="flex items-center gap-2 lg:hidden">
+                        <Clock className="w-6 h-6 text-emerald-500" />
+                        <span className="font-bold text-lg text-slate-900 dark:text-white">CronMaster</span>
                     </div>
 
+                    {/* Theme Mode Segmented Control: Light (Sun), Dark (Moon), System (Monitor) */}
+                    <div className="ml-auto flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <button
+                            type="button"
+                            onClick={() => setTheme('light')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                                theme === 'light'
+                                    ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-xs font-semibold'
+                                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="Light Mode"
+                        >
+                            <Sun className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTheme('dark')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                                theme === 'dark'
+                                    ? 'bg-white dark:bg-slate-800 text-emerald-400 shadow-xs font-semibold'
+                                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="Dark Mode"
+                        >
+                            <Moon className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTheme('system')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                                theme === 'system'
+                                    ? 'bg-white dark:bg-slate-800 text-blue-400 shadow-xs font-semibold'
+                                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                            }`}
+                            title="System Mode"
+                        >
+                            <Monitor className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="w-full max-w-md mx-auto my-auto py-6 space-y-6">
                     <div className="text-center space-y-2">
-                        <h1 className="text-3xl font-extrabold text-white tracking-tight">Create Account</h1>
-                        <p className="text-sm text-slate-400">Join CronMaster to start scheduling & monitoring jobs</p>
+                        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create Account</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Join CronMaster to start scheduling & monitoring jobs</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                                 Username
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                     <User className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
                                     placeholder="Choose a username"
                                     required
                                 />
@@ -100,18 +144,18 @@ const Register: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                                 Email Address
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                     <Mail className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
                                     placeholder="name@domain.com"
                                     required
                                 />
@@ -119,18 +163,18 @@ const Register: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                                 Password
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                     <Lock className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
                                     placeholder="Minimum 6 characters"
                                     required
                                 />
@@ -138,18 +182,18 @@ const Register: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                                 Confirm Password
                             </label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                     <Lock className="w-4 h-4" />
                                 </div>
                                 <input
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-800 bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 pl-10 pr-4 py-2.5 text-slate-900 dark:text-slate-100 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
                                     placeholder="Re-enter your password"
                                     required
                                 />
@@ -159,7 +203,7 @@ const Register: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer mt-2"
+                            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer mt-2"
                         >
                             {isLoading ? (
                                 <>
@@ -178,9 +222,9 @@ const Register: React.FC = () => {
                     {/* Social Auth Divider */}
                     <div className="relative my-4 flex items-center justify-center">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-800" />
+                            <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                         </div>
-                        <span className="relative bg-slate-950 px-4 text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                        <span className="relative bg-white dark:bg-slate-950 px-4 text-xs uppercase text-slate-400 dark:text-slate-500 font-semibold tracking-wider">
                             Or continue with
                         </span>
                     </div>
@@ -189,7 +233,7 @@ const Register: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-slate-200 font-semibold text-sm hover:bg-slate-800 active:scale-[0.98] transition-all cursor-pointer"
+                        className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-slate-700 dark:text-slate-200 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-[0.98] transition-all shadow-xs cursor-pointer"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                             <g transform="matrix(1, 0, 0, 1, 0, 0)">
@@ -203,9 +247,9 @@ const Register: React.FC = () => {
                     </button>
 
                     {/* Login Link */}
-                    <div className="text-center text-sm text-slate-400">
+                    <div className="text-center text-sm text-slate-500 dark:text-slate-400">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline">
+                        <Link to="/login" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
                             Log in
                         </Link>
                     </div>

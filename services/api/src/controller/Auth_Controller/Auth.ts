@@ -30,10 +30,10 @@ const RegisterService = async (req: Request, res: Response) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Insert into database (populating name and username)
+        // Insert into database (populating name and username to satisfy constraints)
         const result = await pool.query(
-            "INSERT INTO users ( username, password, email) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
-            [username, hashedPassword, email || null]
+            "INSERT INTO users (name, username, password, email) VALUES ($1, $2, $3, $4) RETURNING id, username, email, created_at",
+            [username, username, hashedPassword, email || null]
         );
 
         return res.status(201).json({

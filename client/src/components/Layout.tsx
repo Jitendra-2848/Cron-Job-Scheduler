@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { ThemeProvider } from '../context/ThemeContext';
-import { CronProvider } from '../context/CronContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { SearchModal } from './SearchModal';

@@ -6,6 +6,7 @@ import {
   Bell, 
   Sun, 
   Moon, 
+  Monitor,
   ChevronRight, 
   Check, 
   AlertTriangle 
@@ -20,7 +21,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
-  const { isDark, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { setSearchModalOpen, user } = useCron();
   const location = useLocation();
   const navigate = useNavigate();
@@ -41,24 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
     pageTitle = 'System Settings';
   }
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'API Health Check failed',
-      desc: 'Ping response delay exceeded 2500ms limit',
-      time: '3 mins ago',
-      unread: true,
-      type: 'error'
-    },
-    {
-      id: 2,
-      title: 'Database Backup completed',
-      desc: 'Exported 1.4 GB archive to S3 bucket',
-      time: '12:00 AM',
-      unread: false,
-      type: 'success'
-    }
-  ];
+  const notifications: any[] = [];
 
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-none">
@@ -120,35 +104,72 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
                 <span className="font-semibold text-xs text-slate-800 dark:text-white">Notifications</span>
               </div>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                {notifications.map(n => (
-                  <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors flex gap-2.5">
-                    <div className={`p-1.5 rounded shrink-0 h-fit mt-0.5 ${
-                      n.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
-                    }`}>
-                      {n.type === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-slate-900 dark:text-white truncate">{n.title}</p>
-                        <span className="text-[10px] text-slate-400 shrink-0 ml-1">{n.time}</span>
+                {notifications.length > 0 ? (
+                  notifications.map(n => (
+                    <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors flex gap-2.5">
+                      <div className={`p-1.5 rounded shrink-0 h-fit mt-0.5 ${
+                        n.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        {n.type === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{n.desc}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-slate-900 dark:text-white truncate">{n.title}</p>
+                          <span className="text-[10px] text-slate-400 shrink-0 ml-1">{n.time}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{n.desc}</p>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-slate-400 text-xs">
+                    No new notifications.
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded text-slate-450 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {isDark ? <Sun className="w-4.5 h-4.5 text-amber-500" /> : <Moon className="w-4.5 h-4.5 text-slate-500" />}
-        </button>
+        {/* Theme Mode Control: Light (Sun), Dark (Moon), System (Monitor) */}
+        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+          <button
+            type="button"
+            onClick={() => setTheme('light')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'light'
+                ? 'bg-white dark:bg-slate-700 text-amber-500 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+            title="Light Mode"
+          >
+            <Sun className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('dark')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'dark'
+                ? 'bg-white dark:bg-slate-700 text-emerald-400 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+            title="Dark Mode"
+          >
+            <Moon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme('system')}
+            className={`p-1.5 rounded-lg transition-all ${
+              theme === 'system'
+                ? 'bg-white dark:bg-slate-700 text-blue-400 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+            title="System Mode"
+          >
+            <Monitor className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* User Avatar */}
         <button

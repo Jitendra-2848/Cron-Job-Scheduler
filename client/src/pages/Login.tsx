@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -136,17 +136,43 @@ const Login: React.FC = () => {
             <span className="font-bold text-lg text-slate-900 dark:text-white">CronMaster</span>
           </div>
 
-          <div className="ml-auto flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          {/* Theme Mode Segmented Control: Light (Sun), Dark (Moon), System (Monitor) */}
+          <div className="ml-auto flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <button
               type="button"
-              onClick={toggleTheme}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-xs"
-              title="Click to cycle theme (Light -> Dark -> System)"
+              onClick={() => setTheme('light')}
+              className={`p-1.5 rounded-lg transition-all ${
+                theme === 'light'
+                  ? 'bg-white dark:bg-slate-800 text-amber-500 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+              title="Light Mode"
             >
-              {theme === 'light' && <Sun className="w-4 h-4 text-amber-500" />}
-              {theme === 'dark' && <Moon className="w-4 h-4 text-emerald-400" />}
-              {theme === 'system' && <Monitor className="w-4 h-4 text-blue-400" />}
-              <span className="capitalize">{theme} Mode</span>
+              <Sun className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme('dark')}
+              className={`p-1.5 rounded-lg transition-all ${
+                theme === 'dark'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-400 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+              title="Dark Mode"
+            >
+              <Moon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme('system')}
+              className={`p-1.5 rounded-lg transition-all ${
+                theme === 'system'
+                  ? 'bg-white dark:bg-slate-800 text-blue-400 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+              title="System Mode"
+            >
+              <Monitor className="w-4 h-4" />
             </button>
           </div>
         </div>

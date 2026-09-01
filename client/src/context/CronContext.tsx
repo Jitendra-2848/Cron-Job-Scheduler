@@ -1,25 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CronJob, ExecutionLog, SystemService, UserProfile, CronStatus } from '../types/cron';
-import { fetchJobs, createJob, updateJob, deleteJob, type BackendJob } from '../services/api';
+import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, type BackendJob } from '../services/api';
 
-const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [
-  {
-    id: 'exec-1001',
-    jobId: '1',
-    jobName: 'API Health Workload',
-    startedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    finishedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    duration: '124ms',
-    status: 'success',
-    exitCode: 0,
-    command: 'GET https://httpbin.org/get',
-    logs: [
-      `[${new Date().toLocaleTimeString()}] INFO Starting cron master worker dispatch...`,
-      `[${new Date().toLocaleTimeString()}] INFO Executed HTTP GET https://httpbin.org/get`,
-      `[${new Date().toLocaleTimeString()}] SUCCESS Target API returned status 200 OK`
-    ]
-  }
-];
+const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [];
 
 const INITIAL_SYSTEM_STATUS: SystemService[] = [
   { name: 'Scheduler Engine', status: 'operational', latency: '4ms' },
@@ -29,14 +12,14 @@ const INITIAL_SYSTEM_STATUS: SystemService[] = [
 ];
 
 const INITIAL_USER: UserProfile = {
-  name: 'Jitendra Kumar',
-  email: 'jitendra@cronmaster.dev',
-  role: 'DevOps Lead / Admin',
+  name: 'User',
+  email: 'user@cronmaster.dev',
+  role: 'Developer',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-  phone: '+1 (555) 234-5678',
-  timezone: 'Asia/Kolkata (UTC+5:30)',
-  twoFactorEnabled: true,
-  joinedDate: 'January 2025'
+  phone: '',
+  timezone: 'UTC',
+  twoFactorEnabled: false,
+  joinedDate: '2025'
 };
 
 interface ToastItem {
@@ -125,6 +108,20 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshJobs();
+
+    fetchMeUser()
+      .then((data) => {
+        if (data && data.user) {
+          setUser((prev) => ({
+            ...prev,
+            name: data.user.username || data.user.name || 'Developer',
+            email: data.user.email || 'user@cronmaster.dev',
+          }));
+        }
+      })
+      .catch(() => {
+        // Unauthenticated or fallback
+      });
   }, []);
 
   const addCronJob = async (jobData: any) => {
