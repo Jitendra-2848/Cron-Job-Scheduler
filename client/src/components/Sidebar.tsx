@@ -5,6 +5,7 @@ import {
   Clock, 
   PlusCircle, 
   History, 
+  BarChart3,
   User, 
   Settings, 
   ChevronLeft, 
@@ -47,7 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       group: 'MONITORING',
       items: [
-        { name: 'History', path: '/history', icon: History }
+        { name: 'History', path: '/history', icon: History },
+        { name: 'Analytics', path: '/analytics', icon: BarChart3 }
       ]
     },
     {

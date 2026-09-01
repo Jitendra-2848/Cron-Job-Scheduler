@@ -91,7 +91,7 @@ const Login: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">Sub-Millisecond Queue Concurrency</h3>
-                <p className="text-xs text-slate-400 mt-0.5">BullMQ and Redis worker queues for heavy background workloads.</p>
+                <p className="text-xs text-slate-400 mt-0.5">High-performance worker queues for heavy background workloads.</p>
               </div>
             </div>
 

@@ -295,7 +295,7 @@ const Register: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <span>PostgreSQL persistence & Redis BullMQ worker queue</span>
+                            <span>High-availability persistence & automated worker queue</span>
                         </div>
                     </div>
                 </div>

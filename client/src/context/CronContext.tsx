@@ -7,8 +7,8 @@ const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [];
 const INITIAL_SYSTEM_STATUS: SystemService[] = [
   { name: 'Scheduler Engine', status: 'operational', latency: '4ms' },
   { name: 'API Gateway', status: 'operational', latency: '12ms' },
-  { name: 'Primary PostgreSQL Database', status: 'operational', latency: '2ms' },
-  { name: 'BullMQ Worker Cluster', status: 'operational', latency: '18ms' }
+  { name: 'System Database', status: 'operational', latency: '2ms' },
+  { name: 'Task Worker Engine', status: 'operational', latency: '18ms' }
 ];
 
 const INITIAL_USER: UserProfile = {

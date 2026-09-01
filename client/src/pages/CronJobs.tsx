@@ -393,7 +393,7 @@ export const CronJobs: React.FC = () => {
                     </td>
 
                     <td className="px-6 py-3.5 text-slate-550 dark:text-slate-400 font-semibold">
-                      {job.name.includes('Backup') ? '18m' : job.name.includes('Health') ? '2m' : job.name.includes('Cleanup') ? '12m' : 'Tomorrow'}
+                      {job.nextRun || 'Managed by Scheduler'}
                     </td>
 
                     <td className="px-6 py-3.5">

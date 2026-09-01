@@ -36,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
     pageTitle = 'Create Cron Job';
   } else if (path === '/history') {
     pageTitle = 'Execution History';
+  } else if (path === '/analytics') {
+    pageTitle = 'Execution Analytics';
   } else if (path === '/profile') {
     pageTitle = 'User Profile';
   } else if (path === '/settings') {

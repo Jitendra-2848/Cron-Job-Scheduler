@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import CronJobs from './pages/CronJobs';
 import CreateCron from './pages/CreateCron';
 import HistoryPage from './pages/History';
+import AnalyticsPage from './pages/Analytics';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Register from './pages/Register';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
               <Route path="/cron-jobs" element={<CronJobs />} />
               <Route path="/create-cron" element={<CreateCron />} />
               <Route path="/history" element={<HistoryPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
