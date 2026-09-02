@@ -127,26 +127,6 @@ docker compose up --build
 
 ---
 
-## API Reference Overview
-
-| Endpoint | Method | Description | Auth Required |
-|---|---|---|---|
-| `/auth/register` | `POST` | Register new user account | No |
-| `/auth/login` | `POST` | Authenticate user and receive cookies | No |
-| `/auth/logout` | `POST` | Terminate active user session | Yes |
-| `/auth/me` | `GET` | Get logged-in user profile | Yes |
-| `/auth/me` | `PUT` | Update user profile details | Yes |
-| `/jobs` | `GET` | Retrieve user's scheduled cron jobs | Yes |
-| `/job` | `POST` | Create new cron job webhook | Yes |
-| `/job/:id` | `GET` | Fetch single cron job details | Yes |
-| `/job/:id` | `PUT` | Update cron job configuration or status | Yes |
-| `/job/:id` | `DELETE` | Delete cron job and purge pending queue | Yes |
-| `/job/:id/run` | `POST` | Trigger manual webhook execution | Yes |
-| `/executions` | `GET` | Retrieve execution telemetry logs | Yes |
-| `/metrics` | `GET` | Retrieve queue depth and concurrency metrics | No |
-
----
-
 ## Testing and Building
 
 ```bash
