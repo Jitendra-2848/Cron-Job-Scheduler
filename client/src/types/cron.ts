@@ -11,6 +11,8 @@ export interface CronJob {
   commandType: 'command' | 'webhook';
   command: string;
   webhookUrl?: string;
+  method?: string;
+  payload?: any;
   status: CronStatus;
   lastRun?: string;
   lastRunStatus?: ExecutionStatus;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CronJob, ExecutionLog, SystemService, UserProfile, CronStatus } from '../types/cron';
-import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, type BackendJob } from '../services/api';
+import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, fetchExecutions, triggerJobRun, type BackendJob, type BackendExecution } from '../services/api';
 
 const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [];
 
@@ -48,6 +48,7 @@ interface CronContextType {
   toggleJobStatus: (id: string) => Promise<void>;
   runJobNow: (id: string) => Promise<void>;
   refreshJobs: () => Promise<void>;
+  refreshExecutions: () => Promise<void>;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
 }
 
@@ -63,6 +64,8 @@ function mapBackendToCronJob(bj: BackendJob): CronJob {
     commandType: 'webhook',
     command: `${bj.method || 'GET'} ${bj.url}`,
     webhookUrl: bj.url,
+    method: bj.method || 'GET',
+    payload: bj.payload,
     status: (bj.status as CronStatus) || 'active',
     nextRun: 'Managed by Scheduler',
     createdAt: bj.created_at ? new Date(bj.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -72,6 +75,26 @@ function mapBackendToCronJob(bj: BackendJob): CronJob {
     timezone: 'Asia/Kolkata',
     executionCount: 1,
     successRate: 100,
+  };
+}
+
+function mapBackendToExecutionLog(be: BackendExecution): ExecutionLog {
+  const startedAt = be.created_at ? new Date(be.created_at).toISOString().replace('T', ' ').substring(0, 19) : new Date().toISOString().replace('T', ' ').substring(0, 19);
+  return {
+    id: String(be.id),
+    jobId: String(be.job_id),
+    jobName: be.job_name || `Job #${be.job_id}`,
+    startedAt: startedAt,
+    finishedAt: startedAt,
+    duration: `${be.response_time_ms ?? 0}ms`,
+    status: be.status === 'success' ? 'success' : 'failed',
+    exitCode: be.response_code ?? (be.status === 'success' ? 200 : 500),
+    command: `${be.method || 'GET'} ${be.url || ''}`,
+    logs: [
+      `[${startedAt}] ${be.status.toUpperCase()} HTTP ${be.response_code ?? 0} (Latency: ${be.response_time_ms ?? 0}ms)`,
+      be.response_body ? `Response: ${be.response_body}` : '',
+      be.error_message ? `Error: ${be.error_message}` : ''
+    ].filter(Boolean)
   };
 }
 
@@ -97,10 +120,20 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const refreshExecutions = async () => {
+    try {
+      const backendExecs = await fetchExecutions();
+      setExecutionLogs(backendExecs.map(mapBackendToExecutionLog));
+    } catch (err: any) {
+      console.error('Failed to load executions from API:', err);
+    }
+  };
+
   const refreshJobs = async () => {
     try {
       const backendJobs = await fetchJobs();
       setCronJobs(backendJobs.map(mapBackendToCronJob));
+      await refreshExecutions();
     } catch (err: any) {
       console.error('Failed to load jobs from API:', err);
     }
@@ -108,6 +141,7 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshJobs();
+    refreshExecutions();
 
     fetchMeUser()
       .then((data) => {
@@ -147,6 +181,8 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await updateJob(id, {
         name: jobData.name,
         url: jobData.webhookUrl || jobData.command,
+        method: jobData.method,
+        payload: jobData.payload,
         cron_expression: jobData.schedule,
         status: jobData.status,
       });
@@ -184,73 +220,17 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = cronJobs.find(j => j.id === id);
     if (!target) return;
 
-    showToast(`Triggering manual run for "${target.name}"...`, 'info');
-
-    const startTime = Date.now();
-    const newExecId = `exec-${Date.now()}`;
-    const targetUrl = target.webhookUrl || target.command.replace(/^(GET|POST|PUT|DELETE)\s+/, '');
-
-    const newLog: ExecutionLog = {
-      id: newExecId,
-      jobId: target.id,
-      jobName: target.name,
-      startedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      duration: 'Running...',
-      status: 'running',
-      exitCode: -1,
-      command: targetUrl,
-      logs: [
-        `[${new Date().toLocaleTimeString()}] INFO Manual execution triggered by user`,
-        `[${new Date().toLocaleTimeString()}] INFO Dispatching request to ${targetUrl}...`
-      ]
-    };
-
-    setExecutionLogs(prev => [newLog, ...prev]);
+    showToast(`Triggering execution for "${target.name}"...`, 'info');
 
     try {
-      const res = await fetch(targetUrl);
-      const durationMs = Date.now() - startTime;
-      const statusText = res.ok ? 'success' : 'failed';
-
-      setExecutionLogs(prev => prev.map(log => {
-        if (log.id === newExecId) {
-          return {
-            ...log,
-            finishedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            duration: `${durationMs}ms`,
-            status: statusText,
-            exitCode: res.status,
-            logs: [
-              ...log.logs,
-              `[${new Date().toLocaleTimeString()}] INFO HTTP ${res.status} ${res.statusText}`,
-              `[${new Date().toLocaleTimeString()}] ${res.ok ? 'SUCCESS' : 'ERROR'} Execution finished.`
-            ]
-          };
-        }
-        return log;
-      }));
-
-      showToast(`Manual run for "${target.name}" finished with status ${res.status}`, res.ok ? 'success' : 'error');
+      const result = await triggerJobRun(id);
+      await refreshExecutions();
+      const exec = result.data;
+      const isOk = exec?.status === 'success';
+      showToast(`Run for "${target.name}" completed with status ${exec?.response_code || (isOk ? 200 : 500)}`, isOk ? 'success' : 'error');
     } catch (err: any) {
-      const durationMs = Date.now() - startTime;
-      setExecutionLogs(prev => prev.map(log => {
-        if (log.id === newExecId) {
-          return {
-            ...log,
-            finishedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            duration: `${durationMs}ms`,
-            status: 'failed',
-            exitCode: 500,
-            logs: [
-              ...log.logs,
-              `[${new Date().toLocaleTimeString()}] ERROR ${err.message}`
-            ]
-          };
-        }
-        return log;
-      }));
-
-      showToast(`Manual run for "${target.name}" failed: ${err.message}`, 'error');
+      showToast(err.message || `Failed to run "${target.name}"`, 'error');
+      await refreshExecutions();
     }
   };
 
@@ -280,6 +260,7 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toggleJobStatus,
       runJobNow,
       refreshJobs,
+      refreshExecutions,
       updateUserProfile
     }}>
       {children}

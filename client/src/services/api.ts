@@ -157,3 +157,41 @@ export async function fetchMetrics(): Promise<BackendMetrics> {
   }
   return await res.json();
 }
+
+export interface BackendExecution {
+  id: number | string;
+  job_id: number | string;
+  job_name?: string;
+  url?: string;
+  method?: string;
+  status: 'success' | 'failed' | 'running';
+  response_code: number | null;
+  response_body: string | null;
+  response_time_ms: number;
+  error_message: string | null;
+  attempt_number: number;
+  created_at: string;
+}
+
+export async function fetchExecutions(): Promise<BackendExecution[]> {
+  const res = await fetch(`${API_BASE_URL}/executions`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch executions: ${res.statusText}`);
+  }
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function triggerJobRun(id: string | number): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/job/${id}/run`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || `Failed to run job ${id}`);
+  }
+  return data;
+}
