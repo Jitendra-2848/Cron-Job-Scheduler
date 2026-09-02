@@ -6,7 +6,10 @@ export const api = {
       method: 'GET',
       credentials: 'include',
     });
+    console.log(endpoint);
+    console.log(res);
     const data = await res.json().catch(() => ({}));
+    console.log(data)
     if (!res.ok) {
       const err: any = new Error(data.message || `Request failed with status ${res.status}`);
       err.response = { status: res.status, data };

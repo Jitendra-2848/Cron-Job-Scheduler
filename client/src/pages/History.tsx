@@ -102,35 +102,43 @@ export const HistoryPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/65 font-medium">
-                  {paginatedLogs.map((log) => (
-                    <tr
-                      key={log.id}
-                      onClick={() => setSelectedLogId(log.id)}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition-colors ${
-                        selectedLogId === log.id ? 'bg-[#E8F8F2] dark:bg-emerald-950/20' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-slate-500 font-mono">
-                        {log.startedAt.split(' ')[1] || log.startedAt}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                        {log.jobName}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700 dark:text-slate-350">
-                        {log.duration}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 font-bold ${
-                          log.status === 'success' ? 'text-emerald-600' : 'text-rose-600'
-                        }`}>
-                          ● {log.status === 'success' ? 'Success' : 'Failed'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-450 dark:text-slate-500 font-semibold">
-                        Scheduled
+                  {paginatedLogs.length > 0 ? (
+                    paginatedLogs.map((log) => (
+                      <tr
+                        key={log.id}
+                        onClick={() => setSelectedLogId(log.id)}
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-850/50 cursor-pointer transition-colors ${
+                          selectedLogId === log.id ? 'bg-[#E8F8F2] dark:bg-emerald-950/20' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3 text-slate-500 font-mono">
+                          {log.startedAt.split(' ')[1] || log.startedAt}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                          {log.jobName}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-350">
+                          {log.duration}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 font-bold ${
+                            log.status === 'success' ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            ● {log.status === 'success' ? 'Success' : 'Failed'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-450 dark:text-slate-500 font-semibold">
+                          Scheduled
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">
+                        No execution history recorded yet. Run a cron job to generate logs.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

@@ -13,9 +13,16 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(cookieParser());
 app.use(express.json());
+app.use(cookieParser());
+app.use((req, res, next) => {
+  console.log("METHOD:", req.method);
+  console.log("URL:", req.url);
+  console.log("CONTENT TYPE:", req.headers["content-type"]);
+  console.log("BODY:", req.body);
 
+  next();
+});
 app.use("/auth", authRouter);
 app.use("/", router);
 

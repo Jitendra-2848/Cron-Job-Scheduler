@@ -126,7 +126,7 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addCronJob = async (jobData: any) => {
     try {
-      await createJob({
+      const res = await createJob({
         name: jobData.name,
         url: jobData.webhookUrl || jobData.command || 'https://httpbin.org/get',
         method: jobData.method || 'GET',
@@ -135,38 +135,41 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
         retries: jobData.maxRetries || 3,
       });
       await refreshJobs();
-      showToast(`Cron job "${jobData.name}" created successfully on backend!`, 'success');
+      const msg = res?.message || `Cron job "${jobData.name}" created successfully!`;
+      showToast(msg, 'success');
     } catch (err: any) {
-      showToast(`Error creating job: ${err.message}`, 'error');
+      showToast(err.message || 'Error creating cron job', 'error');
     }
   };
 
   const updateCronJob = async (id: string, jobData: Partial<CronJob>) => {
     try {
-      await updateJob(id, {
+      const res = await updateJob(id, {
         name: jobData.name,
         url: jobData.webhookUrl || jobData.command,
         cron_expression: jobData.schedule,
         status: jobData.status,
       });
       await refreshJobs();
-      showToast('Cron job updated successfully', 'info');
+      const msg = res?.message || 'Cron job updated successfully!';
+      showToast(msg, 'info');
     } catch (err: any) {
-      showToast(`Error updating job: ${err.message}`, 'error');
+      showToast(err.message || 'Error updating job', 'error');
     }
   };
 
   const deleteCronJob = async (id: string) => {
     try {
       const target = cronJobs.find(j => j.id === id);
-      await deleteJob(id);
+      const res = await deleteJob(id);
       await refreshJobs();
       if (selectedJobForDrawer?.id === id) {
         setSelectedJobForDrawer(null);
       }
-      showToast(`Deleted cron job "${target?.name || id}"`, 'info');
+      const msg = res?.message || `Deleted cron job "${target?.name || id}"`;
+      showToast(msg, 'info');
     } catch (err: any) {
-      showToast(`Error deleting job: ${err.message}`, 'error');
+      showToast(err.message || 'Error deleting job', 'error');
     }
   };
 

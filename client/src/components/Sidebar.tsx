@@ -11,9 +11,10 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Layers, 
+  LogOut,
   X
 } from 'lucide-react';
-import { useCron } from '../context/CronContext';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -28,8 +29,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   setMobileOpen
 }) => {
-  const { user } = useCron();
+  const { user: authUser, logout } = useAuth();
   const location = useLocation();
+
+  const currentUser = authUser ? {
+    name: authUser.name,
+    email: authUser.email,
+    avatar: authUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.name)}&background=10b981&color=fff`
+  } : {
+    name: 'User',
+    email: 'user@cronmaster.dev',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
+  };
 
   const navGroups = [
     {
@@ -155,28 +166,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Sidebar Footer User Info */}
-      <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
         <NavLink
           to="/profile"
           onClick={() => setMobileOpen(false)}
-          className={`flex items-center gap-3 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${collapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-3 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-1 min-w-0 ${collapsed ? 'justify-center' : ''}`}
         >
           <img
-            src={user.avatar}
-            alt={user.name}
-            className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+            src={currentUser.avatar}
+            alt={currentUser.name}
+            className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
           />
           {!collapsed && (
             <div className="flex flex-col min-w-0 flex-1 text-xs">
               <span className="font-semibold text-slate-800 dark:text-slate-200 truncate leading-snug">
-                {user.name}
+                {currentUser.name}
               </span>
               <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate leading-none">
-                {user.email}
+                {currentUser.email}
               </span>
             </div>
           )}
         </NavLink>
+
+        {!collapsed && (
+          <button
+            onClick={() => logout()}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
     </div>

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Lock, User, Mail, ArrowRight, Loader2, CheckCircle2, Sun, Moon, Monitor } from 'lucide-react';
-import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
     const { theme, setTheme } = useTheme();
+    const { register } = useAuth();
     const [username, setUsername] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -41,19 +42,12 @@ const Register: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const response = await api.post('/auth/register', {
-                username,
-                email,
-                password,
-            });
-
-            if (response.status === 201) {
-                toast.success(response.data.message || 'Registered successfully!');
-                navigate('/login');
-            }
+            await register(username, password, email);
+            toast.success('Account registered & logged in!');
+            navigate('/dashboard');
         } catch (err: any) {
-            console.error(err.response);
-            const errMsg = err.response?.data?.message || 'Failed to create account';
+            console.error(err);
+            const errMsg = err.message || 'Failed to create account';
             setError(errMsg);
         } finally {
             setIsLoading(false);

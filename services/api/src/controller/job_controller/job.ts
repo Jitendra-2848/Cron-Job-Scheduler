@@ -3,6 +3,7 @@ import type { createJobRequest, individual_job, jobs_Body, jobs_Response } from 
 import { pool } from "../../db/pool.js";
 import { redis } from "../../db/redis.js";
 import { Queue } from "bullmq";
+import { getNextRunAt } from "../../lib/Cron_next_run.ts";
 
 const queue = new Queue("cronmaster-jobs", {
     connection: redis,
@@ -20,20 +21,66 @@ export async function jobs(req: Request<{}, {}, jobs_Body>, res: Response<jobs_R
 }
 export async function create_job(req: Request<{}, {}, createJobRequest>, res: Response<jobs_Response>) {
     try {
-        const { name, url, method, cron_expression, payload, retries } = req.body;
-        if (!name || !url || !cron_expression) {
-            return res.status(400).json({ message: "All field are required !" });
-        }
-        const userId = (req as any).user?.userId || (req as any).user || 1;
-        const data = await pool.query(`INSERT INTO jobs (user_id,name,url,method,cron_expression,payload,retries)  
-            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [userId, name, url, method ?? "GET", cron_expression, payload ?? {}, retries ?? 3,]);
+        console.log(req.body);
 
-        return res.status(200).json({ message: "success" })
+        const {
+            name,
+            url,
+            method,
+            cron_expression,
+            payload,
+            retries
+        } = req.body;
+
+        if (!name || !url || !cron_expression) {
+            return res.status(400).json({
+                message: "All fields are required!"
+            });
+        }
+
+        const userId = (req as any).user?.userId || 1;
+
+        const next_run_at = getNextRunAt(cron_expression);
+
+        const data = await pool.query(
+            `INSERT INTO jobs
+            (
+                user_id,
+                name,
+                url,
+                method,
+                cron_expression,
+                next_run_at,
+                payload,
+                retries
+            )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+            [
+                userId,
+                name,
+                url,
+                method ?? "GET",
+                cron_expression,
+                next_run_at,
+                payload ?? {},
+                retries ?? 3
+            ]
+        );
+
+        return res.status(201).json({
+            message: "Cron job created successfully",
+            data: data.rows[0]
+        });
+
     } catch (error: any) {
-        console.log(error)
-        return res.status(500).json({ message: `internal server error`, error: error })
+        console.error(error);
+
+        return res.status(500).json({
+            message: "internal server error"
+        });
     }
+
 }
 
 export async function job(req: Request<{ id: string }, {}>, res: Response<jobs_Response>) {

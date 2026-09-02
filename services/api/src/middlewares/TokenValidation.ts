@@ -23,20 +23,29 @@ export const authenticateToken = (
     res: Response,
     next: NextFunction
 ) => {
-    const authHeader = req.headers["authorization"];
-    const token = req.cookies?.accessToken || (authHeader && authHeader.split(" ")[1]);
+    const authHeader = req.headers.authorization;
+
+    const token =
+        req.cookies?.accessToken ||
+        (authHeader ? authHeader.split(" ")[1] : undefined);
 
     if (!token) {
-        req.user = { userId: 1, username: "default_user" };
-        return next();
+        return res.status(401).json({
+            message: "Unauthorized user",
+        });
     }
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
+
         req.user = decoded;
+
         next();
     } catch (error) {
-        req.user = { userId: 1, username: "default_user" };
-        next();
+        console.error("JWT verification failed:", error);
+
+        return res.status(401).json({
+            message: "Invalid or expired token",
+        });
     }
 };

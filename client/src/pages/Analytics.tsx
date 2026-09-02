@@ -12,9 +12,10 @@ import {
 } from 'lucide-react';
 import { useCron } from '../context/CronContext';
 import { fetchMetrics, type BackendMetrics } from '../services/api';
+import { GanttChart } from '../components/GanttChart';
 
 export const AnalyticsPage: React.FC = () => {
-  const { cronJobs, executionLogs } = useCron();
+  const { cronJobs, executionLogs, runJobNow } = useCron();
   const [metricsData, setMetricsData] = useState<BackendMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -141,6 +142,13 @@ export const AnalyticsPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Interactive Gantt Chart Timeline */}
+      <GanttChart
+        cronJobs={cronJobs}
+        executionLogs={executionLogs}
+        runJobNow={runJobNow}
+      />
 
       {/* Two-Column Section: Where Jobs Run vs Execution Time Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

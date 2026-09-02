@@ -1,36 +1,55 @@
-name: Build_test
+name: Build & Test CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
-
+      - master
   pull_request:
     branches:
       - main
+      - master
 
 jobs:
-  test:
+  build-and-test:
+    name: Build & Validate CronMaster Workspace
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js 20 Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Client Dependencies
+        run: npm --prefix client ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Install Services Dependencies
+        run: |
+          npm --prefix services/api install
+          npm --prefix services/scheduler install
+          npm --prefix services/worker install
 
-      - name: Test
-        run: npm test
+      - name: Lint Frontend Application
+        run: npm --prefix client run lint
 
-      - name: Build
-        run: npm run build
+      - name: Build Frontend Production Assets
+        run: npm --prefix client run build
+
+  docker-validate:
+    name: Validate Docker Containers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Config
+        run: docker compose config

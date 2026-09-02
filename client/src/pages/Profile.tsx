@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Shield, Laptop, Save } from 'lucide-react';
 import { useCron } from '../context/CronContext';
 import { FeatureModal } from '../components/FeatureModal';
@@ -15,6 +15,13 @@ const Profile: React.FC = () => {
 
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
+
+  useEffect(() => {
+    setName(user.name);
+    setEmail(user.email);
+    setPhone(user.phone);
+    setTimezone(user.timezone);
+  }, [user]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

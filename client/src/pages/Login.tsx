@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, ShieldCheck, Zap, Activity, Lock, User, ArrowRight, Loader2, Sun, Moon, Monitor } from 'lucide-react';
-import { api } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { login } = useAuth();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -30,18 +31,12 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/login', {
-        username,
-        password,
-      });
-
-      if (response.status === 200) {
-        toast.success(response.data.message || 'Logged in successfully!');
-        navigate('/dashboard');
-      }
+      await login(username, password);
+      toast.success('Logged in successfully!');
+      navigate('/dashboard');
     } catch (err: any) {
-      console.error(err.response);
-      const errMsg = err.response?.data?.message || 'Invalid username or password';
+      console.error(err);
+      const errMsg = err.message || 'Invalid username or password';
       setError(errMsg);
     } finally {
       setIsLoading(false);
@@ -292,4 +287,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
+
