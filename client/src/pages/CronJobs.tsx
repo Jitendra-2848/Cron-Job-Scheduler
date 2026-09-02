@@ -8,20 +8,37 @@ import {
   ArrowLeft, 
   Play, 
   Pause,
-  Clock
+  Clock,
+  Edit,
+  X,
+  Save
 } from 'lucide-react';
 import { useCron } from '../context/CronContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { parseCronExpression } from '../utils/cronParser';
+import type { CronJob, CronStatus } from '../types/cron';
 
 type DetailTab = 'overview' | 'executions' | 'configuration';
 
 export const CronJobs: React.FC = () => {
   const navigate = useNavigate();
-  const { cronJobs, runJobNow, toggleJobStatus, deleteCronJob, executionLogs, showToast } = useCron();
+  const { cronJobs, runJobNow, toggleJobStatus, deleteCronJob, updateCronJob, executionLogs, showToast, refreshJobs } = useCron();
 
-  // Selected job for detailed view (instead of side drawer)
+  // Selected job for detailed view
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>('overview');
+
+  // Edit Job Modal State
+  const [editingJob, setEditingJob] = useState<CronJob | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editSchedule, setEditSchedule] = useState('');
+  const [editEndpoint, setEditEndpoint] = useState('');
+  const [editMethod, setEditMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE'>('GET');
+  const [editPayloadStr, setEditPayloadStr] = useState('{}');
+  const [editStatus, setEditStatus] = useState<CronStatus>('active');
+  const [editRetries, setEditRetries] = useState(3);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -32,12 +49,63 @@ export const CronJobs: React.FC = () => {
     return cronJobs.find((j) => j.id === activeJobId) || null;
   }, [cronJobs, activeJobId]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      showToast('Cron jobs refreshed', 'info');
-    }, 500);
+    await refreshJobs();
+    setIsRefreshing(false);
+    showToast('Cron jobs refreshed from server', 'info');
+  };
+
+  const handleOpenEditModal = (job: CronJob) => {
+    setEditingJob(job);
+    setEditName(job.name);
+    setEditDescription(job.description || '');
+    setEditSchedule(job.schedule);
+    setEditEndpoint(job.webhookUrl || job.command.replace(/^(GET|POST|PUT|DELETE)\s+/, ''));
+    setEditMethod((job.method as any) || 'GET');
+    setEditPayloadStr(job.payload ? JSON.stringify(job.payload, null, 2) : '{}');
+    setEditStatus(job.status);
+    setEditRetries(job.maxRetries || 3);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJob) return;
+
+    if (!editName.trim()) {
+      showToast('Job name is required', 'error');
+      return;
+    }
+
+    let parsedPayload: any = {};
+    if (editMethod !== 'GET' && editMethod !== 'DELETE' && editPayloadStr.trim()) {
+      try {
+        parsedPayload = JSON.parse(editPayloadStr);
+      } catch {
+        showToast('Invalid JSON in Request Body payload', 'error');
+        return;
+      }
+    }
+
+    setIsSavingEdit(true);
+    try {
+      await updateCronJob(editingJob.id, {
+        name: editName,
+        description: editDescription,
+        schedule: editSchedule,
+        webhookUrl: editEndpoint,
+        method: editMethod,
+        payload: parsedPayload,
+        status: editStatus,
+        maxRetries: editRetries,
+      });
+      setEditingJob(null);
+      showToast('Cron job updated successfully!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update job', 'error');
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const filteredJobs = useMemo(() => {
@@ -62,7 +130,7 @@ export const CronJobs: React.FC = () => {
     return executionLogs.filter(log => log.jobId === selectedJob.id || log.jobName === selectedJob.name);
   }, [executionLogs, selectedJob]);
 
-  // If a job is selected, show the MongoDB Atlas style detail view!
+  // If a job is selected, show detail view
   if (selectedJob) {
     const job = selectedJob;
 
@@ -72,7 +140,7 @@ export const CronJobs: React.FC = () => {
         {/* Back navigation */}
         <button
           onClick={() => setActiveJobId(null)}
-          className="flex items-center gap-1.5 text-xs font-bold text-[#0A8F63] hover:underline"
+          className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Cron Jobs
@@ -92,18 +160,25 @@ export const CronJobs: React.FC = () => {
             </p>
           </div>
 
-          {/* Action buttons (MongoDB style) */}
-          <div className="flex items-center gap-2">
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => runJobNow(job.id)}
-              className="px-3.5 py-1.5 rounded bg-[#0A8F63] hover:bg-[#08744F] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs active:scale-98"
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Run Now
             </button>
             <button
+              onClick={() => handleOpenEditModal(job)}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Edit Job
+            </button>
+            <button
               onClick={() => toggleJobStatus(job.id)}
-              className="px-3.5 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Pause className="w-3.5 h-3.5" />
               {job.status === 'paused' ? 'Resume' : 'Pause'}
@@ -113,7 +188,7 @@ export const CronJobs: React.FC = () => {
                 deleteCronJob(job.id);
                 setActiveJobId(null);
               }}
-              className="px-3 py-1.5 rounded border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100/50 transition-colors"
+              className="px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100/50 transition-colors cursor-pointer"
             >
               Delete
             </button>
@@ -126,10 +201,10 @@ export const CronJobs: React.FC = () => {
             <button
               key={tab}
               onClick={() => setDetailTab(tab)}
-              className={`pb-2.5 font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+              className={`pb-2.5 font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                 detailTab === tab
-                  ? 'border-[#0A8F63] text-[#0A8F63]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-250'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               {tab}
@@ -138,7 +213,7 @@ export const CronJobs: React.FC = () => {
         </div>
 
         {/* Tab Panels */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-6 text-xs transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-xs transition-colors shadow-xs">
           
           {detailTab === 'overview' && (() => {
             const thisJobLogs = executionLogs.filter(l => l.jobId === job.id || l.jobName === job.name);
@@ -158,10 +233,10 @@ export const CronJobs: React.FC = () => {
                       Cron Schedule
                     </span>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded font-bold text-emerald-700 dark:text-emerald-400">
+                      <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg font-bold text-emerald-700 dark:text-emerald-400">
                         {job.schedule}
                       </span>
-                      <span className="text-slate-600 dark:text-slate-350 font-medium">
+                      <span className="text-slate-700 dark:text-slate-300 font-medium">
                         ({job.humanSchedule})
                       </span>
                     </div>
@@ -171,7 +246,7 @@ export const CronJobs: React.FC = () => {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
                       HTTP Target Endpoint
                     </span>
-                    <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded block mt-1 text-slate-700 dark:text-slate-300 break-all font-semibold">
+                    <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg block mt-1 text-slate-800 dark:text-slate-200 break-all font-semibold">
                       {endpointStr}
                     </span>
                   </div>
@@ -191,13 +266,13 @@ export const CronJobs: React.FC = () => {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
                         Last Execution
                       </span>
-                      <span className="text-slate-650 dark:text-slate-355 block mt-1 font-mono text-[11px]">
+                      <span className="text-slate-700 dark:text-slate-300 block mt-1 font-mono text-[11px]">
                         {lastExecTime}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
                         Success Rate
@@ -226,24 +301,24 @@ export const CronJobs: React.FC = () => {
                 Job execution logs
               </h4>
               {jobLogs.length > 0 ? (
-                <div className="border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        <th className="px-4 py-2">Time</th>
-                        <th className="px-4 py-2">Duration</th>
-                        <th className="px-4 py-2">Status</th>
-                        <th className="px-4 py-2 text-right">Exit Code</th>
+                        <th className="px-4 py-2.5">Time</th>
+                        <th className="px-4 py-2.5">Duration</th>
+                        <th className="px-4 py-2.5">Status</th>
+                        <th className="px-4 py-2.5 text-right">Exit Code</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-[11px]">
                       {jobLogs.map(log => (
                         <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                          <td className="px-4 py-2.5 text-slate-500">{log.startedAt}</td>
+                          <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">{log.startedAt}</td>
                           <td className="px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300">{log.duration}</td>
                           <td className="px-4 py-2.5">
                             <span className={`inline-flex items-center gap-1 font-semibold ${
-                              log.status === 'success' ? 'text-emerald-600' : 'text-rose-600'
+                              log.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                             }`}>
                               ● {log.status}
                             </span>
@@ -262,26 +337,140 @@ export const CronJobs: React.FC = () => {
 
           {detailTab === 'configuration' && (
             <div className="space-y-4 max-w-md">
-              <div className="flex justify-between border-b border-slate-100 dark:border-slate-850 pb-2">
-                <span className="text-slate-500 font-medium">Timezone</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-250">{job.timezone}</span>
+              <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Timezone</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{job.timezone}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-100 dark:border-slate-850 pb-2">
-                <span className="text-slate-500 font-medium">Execution Timeout</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-250">{job.timeoutSeconds} seconds</span>
+              <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Execution Timeout</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{job.timeoutSeconds} seconds</span>
               </div>
-              <div className="flex justify-between border-b border-slate-100 dark:border-slate-850 pb-2">
-                <span className="text-slate-500 font-medium">Retry Attempts</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-250">{job.maxRetries}</span>
+              <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Retry Attempts</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{job.maxRetries}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Webhook Headers</span>
-                <span className="font-mono text-slate-400 italic">None configured</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Webhook Method</span>
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{job.method || 'GET'}</span>
               </div>
             </div>
           )}
 
         </div>
+
+        {/* Render Edit Modal if opened */}
+        {editingJob && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Cron Job</h3>
+                <button
+                  type="button"
+                  onClick={() => setEditingJob(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Job Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Endpoint URL *</label>
+                  <input
+                    type="url"
+                    required
+                    value={editEndpoint}
+                    onChange={(e) => setEditEndpoint(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">HTTP Method</label>
+                    <select
+                      value={editMethod}
+                      onChange={(e) => setEditMethod(e.target.value as any)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-hidden focus:border-emerald-500"
+                    >
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Status</label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value as any)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-hidden focus:border-emerald-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="paused">Paused</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Cron Expression *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editSchedule}
+                    onChange={(e) => setEditSchedule(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono font-bold text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                  />
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-1">
+                    {parseCronExpression(editSchedule)}
+                  </span>
+                </div>
+
+                {(editMethod === 'POST' || editMethod === 'PUT') && (
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">JSON Payload Body</label>
+                    <textarea
+                      rows={4}
+                      value={editPayloadStr}
+                      onChange={(e) => setEditPayloadStr(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setEditingJob(null)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit}
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSavingEdit ? 'Saving...' : 'Save Changes'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     );
@@ -304,7 +493,7 @@ export const CronJobs: React.FC = () => {
 
         <button
           onClick={() => navigate('/create-cron')}
-          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded bg-[#0A8F63] hover:bg-[#08744F] text-white font-semibold text-xs transition-colors shrink-0"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shrink-0 shadow-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Create Cron Job
@@ -312,7 +501,7 @@ export const CronJobs: React.FC = () => {
       </div>
 
       {/* Toolbar Controls */}
-      <div className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs shadow-xs">
         
         {/* Search */}
         <div className="relative w-full md:w-80">
@@ -322,18 +511,18 @@ export const CronJobs: React.FC = () => {
             placeholder="Search jobs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-emerald-600 transition-colors"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-emerald-500 transition-colors"
           />
         </div>
 
         {/* Filter options */}
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto justify-end">
-          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent font-medium text-slate-650 dark:text-slate-350 focus:outline-hidden cursor-pointer"
+              className="bg-transparent font-medium text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
             >
               <option value="all">Status: All</option>
               <option value="active">Active</option>
@@ -343,11 +532,11 @@ export const CronJobs: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-transparent font-medium text-slate-650 dark:text-slate-350 focus:outline-hidden cursor-pointer"
+              className="bg-transparent font-medium text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
             >
               <option value="name">Sort: Name</option>
             </select>
@@ -355,7 +544,7 @@ export const CronJobs: React.FC = () => {
 
           <button
             onClick={handleRefresh}
-            className="p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850/60 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer"
             title="Refresh list"
           >
             <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -364,18 +553,18 @@ export const CronJobs: React.FC = () => {
 
       </div>
 
-      {/* Clean Table Listing (No card wrapper around rows) */}
+      {/* Table Listing */}
       {filteredJobs.length > 0 ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden transition-colors shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-bold uppercase tracking-wider text-slate-550 dark:text-slate-400 select-none">
-                  <th className="px-6 py-3">NAME</th>
-                  <th className="px-6 py-3">SCHEDULE</th>
-                  <th className="px-6 py-3">NEXT RUN</th>
-                  <th className="px-6 py-3">STATUS</th>
-                  <th className="px-6 py-3 text-right">ACTION</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
+                  <th className="px-6 py-3.5">Name</th>
+                  <th className="px-6 py-3.5">Schedule</th>
+                  <th className="px-6 py-3.5">Next Run</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -386,10 +575,10 @@ export const CronJobs: React.FC = () => {
                       setActiveJobId(job.id);
                       setDetailTab('overview');
                     }}
-                    className="hover:bg-slate-50/75 dark:hover:bg-slate-850/50 cursor-pointer transition-colors"
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-3.5">
-                      <span className="font-bold text-slate-900 dark:text-white block hover:text-[#0A8F63]">
+                      <span className="font-bold text-slate-900 dark:text-white block hover:text-emerald-600">
                         {job.name}
                       </span>
                       <span className="text-[11px] text-slate-400 font-normal truncate max-w-[240px] block">
@@ -398,21 +587,21 @@ export const CronJobs: React.FC = () => {
                     </td>
 
                     <td className="px-6 py-3.5">
-                      <span className="font-mono text-[11px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-250 dark:border-slate-700 px-2 py-0.5 rounded text-slate-700 dark:text-slate-350">
+                      <span className="font-mono text-[11px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">
                         {job.schedule}
                       </span>
                     </td>
 
-                    <td className="px-6 py-3.5 text-slate-550 dark:text-slate-400 font-semibold">
+                    <td className="px-6 py-3.5 text-slate-500 dark:text-slate-400 font-semibold font-mono text-[11px]">
                       {job.nextRun || 'Managed by Scheduler'}
                     </td>
 
                     <td className="px-6 py-3.5">
-                      <span className="inline-flex items-center gap-1">
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          job.status === 'active' ? 'bg-[#16A34A]' :
-                          job.status === 'running' ? 'bg-[#6366F1] animate-pulse' :
-                          job.status === 'paused' ? 'bg-slate-400' : 'bg-[#DC2626]'
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${
+                          job.status === 'active' ? 'bg-emerald-500' :
+                          job.status === 'running' ? 'bg-indigo-500 animate-pulse' :
+                          job.status === 'paused' ? 'bg-slate-400' : 'bg-rose-500'
                         }`} />
                         <span className="capitalize text-slate-700 dark:text-slate-300 font-bold">
                           {job.status}
@@ -421,17 +610,24 @@ export const CronJobs: React.FC = () => {
                     </td>
 
                     <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleOpenEditModal(job)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          title="Edit Job"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => runJobNow(job.id)}
-                          className="p-1 rounded text-slate-450 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-50 transition-colors"
+                          className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
                           title="Run Now"
                         >
                           <Play className="w-3.5 h-3.5 fill-current" />
                         </button>
                         <button
                           onClick={() => toggleJobStatus(job.id)}
-                          className="p-1 rounded text-slate-455 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-55 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           title="Pause / Resume"
                         >
                           <Pause className="w-3.5 h-3.5" />
@@ -445,7 +641,7 @@ export const CronJobs: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-10 text-center space-y-3.5">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-3.5 shadow-xs">
           <Clock className="w-8 h-8 mx-auto text-slate-300" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">No cron jobs found</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
@@ -453,10 +649,124 @@ export const CronJobs: React.FC = () => {
           </p>
           <button
             onClick={() => navigate('/create-cron')}
-            className="px-4 py-2 rounded bg-[#0A8F63] hover:bg-[#08744F] text-white text-xs font-semibold shadow-2xs"
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
           >
             + Create Cron Job
           </button>
+        </div>
+      )}
+
+      {/* Render Edit Modal if opened in list view */}
+      {editingJob && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Cron Job</h3>
+              <button
+                type="button"
+                onClick={() => setEditingJob(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Job Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Endpoint URL *</label>
+                <input
+                  type="url"
+                  required
+                  value={editEndpoint}
+                  onChange={(e) => setEditEndpoint(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">HTTP Method</label>
+                  <select
+                    value={editMethod}
+                    onChange={(e) => setEditMethod(e.target.value as any)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-hidden focus:border-emerald-500"
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as any)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-hidden focus:border-emerald-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Cron Expression *</label>
+                <input
+                  type="text"
+                  required
+                  value={editSchedule}
+                  onChange={(e) => setEditSchedule(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono font-bold text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                />
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-1">
+                  {parseCronExpression(editSchedule)}
+                </span>
+              </div>
+
+              {(editMethod === 'POST' || editMethod === 'PUT') && (
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">JSON Payload Body</label>
+                  <textarea
+                    rows={4}
+                    value={editPayloadStr}
+                    onChange={(e) => setEditPayloadStr(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-slate-900 dark:text-white text-xs focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingJob(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSavingEdit ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
