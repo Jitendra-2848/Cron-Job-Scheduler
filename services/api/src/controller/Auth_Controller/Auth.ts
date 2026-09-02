@@ -236,6 +236,41 @@ const MeService = async (req: AuthenticatedRequest, res: Response) => {
     }
 };
 
+const UpdateProfileService = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const { name, email, username } = req.body;
+        const newUsername = username || name;
+
+        const result = await pool.query(
+            `UPDATE users 
+             SET username = COALESCE($1, username),
+                 email = COALESCE($2, email)
+             WHERE id = $3
+             RETURNING id, username, email, created_at`,
+            [newUsername, email, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({
+            message: "Profile updated successfully",
+            user: result.rows[0]
+        });
+    } catch (error: any) {
+        console.error("Update Profile Error:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
@@ -360,4 +395,4 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
     }
 };
 
-export { RegisterService, LoginService, RefreshService, LogoutService, MeService, GoogleRedirectService, GoogleCallbackService };
+export { RegisterService, LoginService, RefreshService, LogoutService, MeService, UpdateProfileService, GoogleRedirectService, GoogleCallbackService };

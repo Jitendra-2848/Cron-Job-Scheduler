@@ -71,6 +71,20 @@ export async function fetchMeUser(): Promise<any> {
   return await res.json();
 }
 
+export async function updateUserProfileApi(data: { name?: string; email?: string; username?: string; avatar?: string }): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json.message || 'Failed to update profile');
+  }
+  return json;
+}
+
 export async function fetchJobs(): Promise<BackendJob[]> {
   const res = await fetch(`${API_BASE_URL}/jobs`, {
     credentials: 'include',

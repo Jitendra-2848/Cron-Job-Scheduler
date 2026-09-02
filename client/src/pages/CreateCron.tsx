@@ -98,13 +98,13 @@ export const CreateCron: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in pb-12">
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in pb-12 px-2 sm:px-0">
       
       {/* Header breadcrumb */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/cron-jobs')}
-          className="p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -113,7 +113,7 @@ export const CreateCron: React.FC = () => {
             Create Cron Job
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Configure target endpoint triggers and scheduled cron patterns.
+            Configure target webhook endpoints, schedules, and payloads.
           </p>
         </div>
       </div>
@@ -121,61 +121,61 @@ export const CreateCron: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-6 text-xs">
         
         {/* Basic Details Box */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-850 pb-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3">
             Basic Information
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Job Name *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Job Name *</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Database Backup"
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Description</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Description</label>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Daily production backup"
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
           </div>
         </div>
 
         {/* Target Trigger Endpoint Box */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-850 pb-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3">
             Target Endpoint
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="sm:col-span-3">
-              <label className="block text-slate-500 font-semibold mb-1.5">Endpoint URL *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Endpoint URL *</label>
               <input
                 type="url"
                 required
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="https://api.example.com/backup"
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white font-mono focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">HTTP Method</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">HTTP Method</label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as any)}
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-hidden focus:border-emerald-500 transition-colors cursor-pointer"
               >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
@@ -186,38 +186,38 @@ export const CreateCron: React.FC = () => {
           </div>
 
           {/* Webhook Headers */}
-          <div className="space-y-2">
+          <div className="space-y-2.5 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-slate-500 font-semibold">HTTP Headers</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold">HTTP Headers</label>
               <button
                 type="button"
                 onClick={handleAddHeader}
-                className="text-xs font-bold text-[#0A8F63] hover:underline"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
               >
                 + Add Header
               </button>
             </div>
 
             {headers.map((h, idx) => (
-              <div key={idx} className="flex items-center gap-2.5">
+              <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Key"
+                  placeholder="Header Key (e.g. Authorization)"
                   value={h.key}
                   onChange={(e) => handleHeaderChange(idx, 'key', e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 font-mono text-[11px]"
+                  className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs"
                 />
                 <input
                   type="text"
-                  placeholder="Value"
+                  placeholder="Header Value"
                   value={h.value}
                   onChange={(e) => handleHeaderChange(idx, 'value', e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 font-mono text-[11px]"
+                  className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveHeader(idx)}
-                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"
+                  className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors self-end sm:self-auto cursor-pointer"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
@@ -225,10 +225,10 @@ export const CreateCron: React.FC = () => {
             ))}
           </div>
 
-          {/* JSON Payload (for POST/PUT/PATCH) */}
+          {/* JSON Payload (for POST/PUT) */}
           {(method === 'POST' || method === 'PUT') && (
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-              <label className="block text-slate-500 font-semibold text-xs">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
                 Request Body (JSON Payload)
               </label>
               <textarea
@@ -236,99 +236,100 @@ export const CreateCron: React.FC = () => {
                 value={payloadStr}
                 onChange={(e) => setPayloadStr(e.target.value)}
                 placeholder='{"key": "value"}'
-                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 font-mono text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
           )}
         </div>
 
         {/* Schedule Editor Box */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-850 pb-2">
-            Schedule Setting
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3">
+            Schedule Configuration
           </h3>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Cron Expression *</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Cron Expression *</label>
               <input
                 type="text"
                 required
                 value={schedule}
                 onChange={(e) => setSchedule(e.target.value)}
                 placeholder="0 0 * * *"
-                className="w-48 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-hidden focus:border-[#0A8F63]"
+                className="w-full sm:w-56 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
-              <span className="text-[11px] text-[#0A8F63] font-bold block mt-2">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold block mt-2">
                 {humanSchedule}
               </span>
             </div>
 
             {/* Expression breakdown rows */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3 text-center">
-              <div>
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Minute</span>
-                <span className="font-mono font-bold mt-0.5 block">{minute}</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{minute}</span>
               </div>
-              <div>
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Hour</span>
-                <span className="font-mono font-bold mt-0.5 block">{hour}</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{hour}</span>
               </div>
-              <div>
-                <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Day of Month</span>
-                <span className="font-mono font-bold mt-0.5 block">{day}</span>
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Day</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{day}</span>
               </div>
-              <div>
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Month</span>
-                <span className="font-mono font-bold mt-0.5 block">{month}</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{month}</span>
               </div>
-              <div>
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Weekday</span>
-                <span className="font-mono font-bold mt-0.5 block">{weekday}</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{weekday}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Retries and Timeouts */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-850 pb-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3">
             Execution Policy
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Max Attempts</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Max Attempts</label>
               <input
                 type="number"
                 min={1}
                 max={5}
                 value={retries}
                 onChange={(e) => setRetries(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white focus:outline-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Execution Timeout (Seconds)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Execution Timeout (Seconds)</label>
               <input
                 type="number"
-                min={10}
+                min={5}
                 max={300}
                 value={timeout}
                 onChange={(e) => setTimeoutVal(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white focus:outline-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-slate-500 font-semibold mb-1.5">Timezone</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Timezone</label>
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="w-full px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-900 dark:text-white focus:outline-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 transition-colors cursor-pointer"
               >
                 <option value="UTC">UTC</option>
                 <option value="America/New_York">America/New_York (EST)</option>
                 <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
               </select>
             </div>
           </div>
@@ -339,13 +340,13 @@ export const CreateCron: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/cron-jobs')}
-            className="px-4 py-2 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-350 font-bold hover:bg-slate-50 transition-colors"
+            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-5 py-2 rounded bg-[#0A8F63] hover:bg-[#08744F] text-white font-bold transition-colors"
+            className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all active:scale-95 shadow-xs cursor-pointer"
           >
             Create Cron Job
           </button>

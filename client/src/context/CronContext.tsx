@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CronJob, ExecutionLog, SystemService, UserProfile, CronStatus } from '../types/cron';
-import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, fetchExecutions, triggerJobRun, type BackendJob, type BackendExecution } from '../services/api';
+import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, fetchExecutions, triggerJobRun, updateUserProfileApi, type BackendJob, type BackendExecution } from '../services/api';
 import { parseCronExpression } from '../utils/cronParser';
 
 const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [];
@@ -236,9 +236,20 @@ export const CronProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = (profileData: Partial<UserProfile>) => {
+  const updateUserProfile = async (profileData: Partial<UserProfile>) => {
     setUser(prev => ({ ...prev, ...profileData }));
-    showToast('Profile settings saved successfully!', 'success');
+    try {
+      await updateUserProfileApi({
+        name: profileData.name,
+        email: profileData.email,
+        username: profileData.name,
+        avatar: profileData.avatar,
+      });
+      showToast('Profile updated and saved to server!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Profile saved locally', 'info');
+    }
   };
 
   return (

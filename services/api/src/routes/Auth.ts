@@ -5,6 +5,7 @@ import {
     RefreshService,
     LogoutService,
     MeService,
+    UpdateProfileService,
     GoogleRedirectService,
     GoogleCallbackService
 } from "../controller/Auth_Controller/Auth.js";
@@ -19,5 +20,7 @@ route.post("/logout", LogoutService);
 route.get("/google", GoogleRedirectService);
 route.get("/google/callback", GoogleCallbackService);
 route.get("/me", authenticateToken, MeService);
+route.put("/me", authenticateToken, UpdateProfileService);
+route.put("/profile", authenticateToken, UpdateProfileService);
 
 export default route;
