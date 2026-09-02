@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchMeUser, loginUser, registerUser, logoutUser } from '../services/api';
+import { fetchMeUser, loginUser, registerUser, logoutUser, setAuthToken, getAuthToken } from '../services/api';
 import { Loader2, Layers } from 'lucide-react';
 
 export interface User {
@@ -48,21 +48,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(false);
       }
     } catch {
-      setUser(null);
-      setIsAuthenticated(false);
+      // If token expired or invalid, clear token
+      if (!getAuthToken()) {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    // Check if token was passed in query params (e.g. from Google OAuth callback)
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setAuthToken(token);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     refreshUser();
   }, []);
 
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      await loginUser(username, password);
+      const res = await loginUser(username, password);
+      if (res && res.user) {
+        setUser({
+          id: res.user.id,
+          name: res.user.username || res.user.name || 'User',
+          username: res.user.username,
+          email: res.user.email || `${res.user.username}@cronmaster.dev`,
+          role: 'Developer',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(res.user.username)}&background=10b981&color=fff`
+        });
+        setIsAuthenticated(true);
+      }
       await refreshUser();
     } finally {
       setIsLoading(false);
@@ -72,9 +93,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (username: string, password: string, email?: string) => {
     setIsLoading(true);
     try {
-      await registerUser(username, password, email);
-      // Automatically log in after registration
-      await loginUser(username, password);
+      const res = await registerUser(username, password, email);
+      if (res && res.user) {
+        setUser({
+          id: res.user.id,
+          name: res.user.username || res.user.name || 'User',
+          username: res.user.username,
+          email: res.user.email || `${res.user.username}@cronmaster.dev`,
+          role: 'Developer',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(res.user.username)}&background=10b981&color=fff`
+        });
+        setIsAuthenticated(true);
+      }
       await refreshUser();
     } finally {
       setIsLoading(false);

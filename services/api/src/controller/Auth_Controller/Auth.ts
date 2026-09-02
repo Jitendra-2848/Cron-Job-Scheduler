@@ -43,9 +43,26 @@ const RegisterService = async (req: Request, res: Response) => {
             [username, username, hashedPassword, email || null]
         );
 
+        const newUser = result.rows[0];
+        const accessToken = generateAccessToken(newUser);
+        const refreshToken = generateRefreshToken(newUser);
+
+        await pool.query("UPDATE users SET refresh_token = $1 WHERE id = $2", [refreshToken, newUser.id]);
+
+        res.cookie("accessToken", accessToken, {
+            ...cookieOptions,
+            maxAge: 15 * 60 * 1000,
+        });
+
+        res.cookie("refreshToken", refreshToken, {
+            ...cookieOptions,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
         return res.status(201).json({
             message: "User registered successfully",
-            user: result.rows[0]
+            accessToken,
+            user: newUser
         });
     } catch (error: any) {
         console.error("Register Error:", error.message);
@@ -93,6 +110,7 @@ const LoginService = async (req: Request, res: Response) => {
 
         return res.status(200).json({
             message: "Login successful",
+            accessToken,
             user: {
                 id: user.id,
                 username: user.username,
@@ -151,7 +169,8 @@ const RefreshService = async (req: Request, res: Response) => {
         });
 
         return res.status(200).json({
-            message: "Token refreshed successfully"
+            message: "Token refreshed successfully",
+            accessToken: newAccessToken
         });
     } catch (error: any) {
         console.error("Refresh Error:", error.message);
@@ -350,7 +369,13 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        return res.redirect(CLIENT_REDIRECT_URL);
+        try {
+            const redirectUrl = new URL(CLIENT_REDIRECT_URL);
+            redirectUrl.searchParams.set("token", accessToken);
+            return res.redirect(redirectUrl.toString());
+        } catch {
+            return res.redirect(`${CLIENT_REDIRECT_URL}?token=${accessToken}`);
+        }
     } catch (error: any) {
         console.error("Google Callback Error:", error.message);
         return res.status(500).json({ message: "Internal server error during Google authentication", error: error.message });

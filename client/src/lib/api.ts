@@ -1,9 +1,19 @@
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '';
 
+function getHeaders(customHeaders: Record<string, string> = {}) {
+  const token = localStorage.getItem('cronmaster_token');
+  const headers: Record<string, string> = { ...customHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export const api = {
   get: async (endpoint: string) => {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
+      headers: getHeaders(),
       credentials: 'include',
     });
     const data = await res.json().catch(() => ({}));
@@ -17,7 +27,7 @@ export const api = {
   post: async (endpoint: string, body: any) => {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify(body),
     });
@@ -32,7 +42,7 @@ export const api = {
   put: async (endpoint: string, body: any) => {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'include',
       body: JSON.stringify(body),
     });
@@ -47,6 +57,7 @@ export const api = {
   delete: async (endpoint: string) => {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
+      headers: getHeaders(),
       credentials: 'include',
     });
     const data = await res.json().catch(() => ({}));

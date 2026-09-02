@@ -1,5 +1,26 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+export function getAuthToken(): string | null {
+  return localStorage.getItem('cronmaster_token');
+}
+
+export function setAuthToken(token: string | null) {
+  if (token) {
+    localStorage.setItem('cronmaster_token', token);
+  } else {
+    localStorage.removeItem('cronmaster_token');
+  }
+}
+
+function getHeaders(customHeaders: Record<string, string> = {}) {
+  const token = getAuthToken();
+  const headers: Record<string, string> = { ...customHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface BackendJob {
   id: number | string;
   name: string;
@@ -36,6 +57,9 @@ export async function loginUser(username: string, password: string): Promise<any
   if (!res.ok) {
     throw new Error(data.message || 'Login failed');
   }
+  if (data.accessToken) {
+    setAuthToken(data.accessToken);
+  }
   return data;
 }
 
@@ -50,19 +74,25 @@ export async function registerUser(username: string, password: string, email?: s
   if (!res.ok) {
     throw new Error(data.message || 'Registration failed');
   }
+  if (data.accessToken) {
+    setAuthToken(data.accessToken);
+  }
   return data;
 }
 
 export async function logoutUser(): Promise<any> {
+  setAuthToken(null);
   const res = await fetch(`${API_BASE_URL}/auth/logout`, {
     method: 'POST',
+    headers: getHeaders(),
     credentials: 'include',
   });
-  return await res.json();
+  return await res.json().catch(() => ({}));
 }
 
 export async function fetchMeUser(): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -74,7 +104,7 @@ export async function fetchMeUser(): Promise<any> {
 export async function updateUserProfileApi(data: { name?: string; email?: string; username?: string; avatar?: string }): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify(data),
   });
@@ -87,6 +117,7 @@ export async function updateUserProfileApi(data: { name?: string; email?: string
 
 export async function fetchJobs(): Promise<BackendJob[]> {
   const res = await fetch(`${API_BASE_URL}/jobs`, {
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -98,6 +129,7 @@ export async function fetchJobs(): Promise<BackendJob[]> {
 
 export async function fetchJobById(id: string | number): Promise<BackendJob> {
   const res = await fetch(`${API_BASE_URL}/job/${id}`, {
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -117,7 +149,7 @@ export async function createJob(jobData: {
 }): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/job`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify(jobData),
   });
@@ -142,7 +174,7 @@ export async function updateJob(
 ): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/job/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify(jobData),
   });
@@ -155,6 +187,7 @@ export async function updateJob(
 export async function deleteJob(id: string | number): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/job/${id}`, {
     method: 'DELETE',
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -165,6 +198,7 @@ export async function deleteJob(id: string | number): Promise<any> {
 
 export async function fetchMetrics(): Promise<BackendMetrics> {
   const res = await fetch(`${API_BASE_URL}/metrics`, {
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -190,6 +224,7 @@ export interface BackendExecution {
 
 export async function fetchExecutions(): Promise<BackendExecution[]> {
   const res = await fetch(`${API_BASE_URL}/executions`, {
+    headers: getHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -202,6 +237,7 @@ export async function fetchExecutions(): Promise<BackendExecution[]> {
 export async function triggerJobRun(id: string | number): Promise<any> {
   const res = await fetch(`${API_BASE_URL}/job/${id}/run`, {
     method: 'POST',
+    headers: getHeaders(),
     credentials: 'include',
   });
   const data = await res.json().catch(() => ({}));

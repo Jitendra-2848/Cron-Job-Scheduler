@@ -8,13 +8,19 @@ import { useAuth } from '../context/AuthContext';
 const Register: React.FC = () => {
     const navigate = useNavigate();
     const { theme, setTheme } = useTheme();
-    const { register } = useAuth();
+    const { register, isAuthenticated } = useAuth();
     const [username, setUsername] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     useEffect(() => {
         if (!error) return;
