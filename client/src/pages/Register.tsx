@@ -48,14 +48,14 @@ const Register: React.FC = () => {
         } catch (err: any) {
             console.error(err);
             const errMsg = err.message || 'Failed to create account';
-            setError(errMsg);
+            toast.error(errMsg);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleGoogleLogin = () => {
-        const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+        const apiBaseUrl = import.meta.env.VITE_API_URL || '';
         window.location.href = `${apiBaseUrl}/auth/google`;
     };
 

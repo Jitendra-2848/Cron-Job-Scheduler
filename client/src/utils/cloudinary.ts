@@ -24,7 +24,6 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   });
 
   const data = await response.json();
-  console.log(data.secure_url);
   if (!response.ok) {
     throw new Error(data.error?.message || 'Failed to upload image to Cloudinary');
   }

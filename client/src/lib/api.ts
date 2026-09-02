@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '';
 
 export const api = {
   get: async (endpoint: string) => {
@@ -6,10 +6,7 @@ export const api = {
       method: 'GET',
       credentials: 'include',
     });
-    console.log(endpoint);
-    console.log(res);
     const data = await res.json().catch(() => ({}));
-    console.log(data)
     if (!res.ok) {
       const err: any = new Error(data.message || `Request failed with status ${res.status}`);
       err.response = { status: res.status, data };

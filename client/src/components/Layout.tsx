@@ -34,10 +34,9 @@ export const LayoutContent: React.FC = () => {
         </main>
       </div>
 
-      {/* Global Modals, Modals & Notifications */}
+      {/* Global Modals & Notifications */}
       <SearchModal />
       <ToastContainer />
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
 
     </div>
   );

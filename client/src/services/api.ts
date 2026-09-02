@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export interface BackendJob {
   id: number | string;
@@ -100,15 +100,12 @@ export async function createJob(jobData: {
   payload?: any;
   retries?: number;
 }): Promise<any> {
-  console.log(API_BASE_URL);
-  console.log(jobData);
   const res = await fetch(`${API_BASE_URL}/job`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(jobData),
   });
-  console.log(res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `Failed to create job: ${res.statusText}`);
