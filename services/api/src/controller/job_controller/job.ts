@@ -213,3 +213,104 @@ export async function get_metrics(req: Request, res: Response) {
         return res.status(500).json({ message: "failed to fetch queue metrics", error: error.message });
     }
 }
+
+export async function get_executions(req: Request, res: Response) {
+    try {
+        const userId = (req as any).user?.userId || 1;
+        const data = await pool.query(
+            `SELECT e.id, e.job_id, e.status, e.response_code, e.response_body, e.response_time_ms, e.error_message, e.attempt_number, e.created_at,
+                    j.name AS job_name, j.url, j.method, j.cron_expression, j.payload
+             FROM executions e
+             JOIN jobs j ON e.job_id = j.id
+             WHERE j.user_id = $1
+             ORDER BY e.created_at DESC
+             LIMIT 100`,
+            [userId]
+        );
+        return res.status(200).json({ message: "success", data: data.rows });
+    } catch (error: any) {
+        return res.status(500).json({ message: "Failed to fetch executions", error: error.message });
+    }
+}
+
+export async function trigger_job_run(req: Request<{ id: string }>, res: Response) {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId || 1;
+
+    try {
+        const jobResult = await pool.query(
+            `SELECT * FROM jobs WHERE id = $1 AND user_id = $2`,
+            [id, userId]
+        );
+
+        if (jobResult.rows.length === 0) {
+            return res.status(404).json({ message: "Job not found" });
+        }
+
+        const job = jobResult.rows[0];
+        const method = job.method || "GET";
+        const url = job.url;
+        let body: string | undefined;
+
+        if (job.payload !== undefined && job.payload !== null) {
+            body = typeof job.payload === "string" ? job.payload : JSON.stringify(job.payload);
+        }
+
+        const startTime = Date.now();
+        let responseCode: number | null = null;
+        let responseBody: string | null = null;
+        let errorMessage: string | null = null;
+        let status: "success" | "failed" = "success";
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: method === "GET" || method === "DELETE" ? null : body ?? null,
+                signal: AbortSignal.timeout(10000)
+            });
+
+            responseCode = response.status;
+            const contentType = response.headers.get("content-type");
+
+            if (contentType?.includes("application/json")) {
+                const json = await response.json();
+                responseBody = JSON.stringify(json);
+            } else {
+                responseBody = await response.text();
+            }
+
+            if (!response.ok) {
+                status = "failed";
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+        } catch (fetchErr: any) {
+            status = "failed";
+            errorMessage = fetchErr.message || "Failed to reach target URL";
+        }
+
+        const duration = Date.now() - startTime;
+
+        const execInsert = await pool.query(
+            `INSERT INTO executions (job_id, status, response_code, response_body, response_time_ms, error_message, attempt_number)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING *`,
+            [job.id, status, responseCode, responseBody, duration, errorMessage, 1]
+        );
+
+        return res.status(200).json({
+            message: status === "success" ? "Job executed successfully" : `Job executed with status ${responseCode || 'error'}`,
+            data: {
+                ...execInsert.rows[0],
+                job_name: job.name,
+                url: job.url,
+                method: job.method,
+            }
+        });
+    } catch (error: any) {
+        return res.status(500).json({ message: "Failed to execute job", error: error.message });
+    }
+}

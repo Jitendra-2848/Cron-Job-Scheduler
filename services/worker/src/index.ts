@@ -27,8 +27,8 @@ interface ExecutionRecord {
 
 // In-Memory Execution Log Buffer to prevent PostgreSQL Write Bottlenecks
 const executionBuffer: ExecutionRecord[] = [];
-const BATCH_SIZE = 10;
-const FLUSH_INTERVAL_MS = 30000; // 30 seconds
+const BATCH_SIZE = 2;
+const FLUSH_INTERVAL_MS = 2000;
 
 function logStructured(level: "info" | "warn" | "error", event: string, data: Record<string, any>) {
     const logPayload = {
