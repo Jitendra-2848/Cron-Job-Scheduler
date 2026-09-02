@@ -8,7 +8,6 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-// Allowed Origins for CORS with credentials support (Vercel & Local)
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.CLIENT_ORIGIN,
@@ -20,7 +19,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser requests (e.g. curl, server-to-server, health checks)
     if (!origin) return callback(null, true);
 
     if (
@@ -38,7 +36,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Safe request logging (no credentials/passwords)
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
     console.log(`[API] ${req.method} ${req.url}`);
@@ -46,7 +43,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health / root check
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
 });

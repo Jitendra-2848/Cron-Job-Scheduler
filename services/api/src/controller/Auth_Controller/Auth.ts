@@ -27,7 +27,6 @@ const RegisterService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Password must be at least 6 characters long" });
         }
 
-        // Check if username or email already exists
         const userCheck = await pool.query(
             "SELECT id FROM users WHERE username = $1 OR (email = $2 AND email IS NOT NULL)",
             [username, email || ""]
@@ -36,7 +35,6 @@ const RegisterService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Username or email is already taken" });
         }
 
-        // Hash the password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -66,7 +64,6 @@ const LoginService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Username and password are required" });
         }
 
-        // Fetch user from DB
         const result = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
         if (result.rows.length === 0) {
             return res.status(401).json({ message: "Invalid username or password" });
@@ -74,29 +71,24 @@ const LoginService = async (req: Request, res: Response) => {
 
         const user = result.rows[0];
 
-        // Compare password hash
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid username or password" });
         }
 
-        // Generate tokens
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
 
-        // Save refresh token in DB
         await pool.query("UPDATE users SET refresh_token = $1 WHERE id = $2", [refreshToken, user.id]);
 
-        // Set access token in HTTP-only cookie
         res.cookie("accessToken", accessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60 * 1000, // 15 minutes
+            maxAge: 15 * 60 * 1000,
         });
 
-        // Set refresh token in HTTP-only cookie
         res.cookie("refreshToken", refreshToken, {
             ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
         return res.status(200).json({
@@ -123,7 +115,6 @@ const RefreshService = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Refresh token is missing" });
         }
 
-        // Verify the refresh token
         let decoded: any;
         try {
             decoded = jwt.verify(refreshToken, JWT_SECRET);
@@ -131,7 +122,6 @@ const RefreshService = async (req: Request, res: Response) => {
             return res.status(403).json({ message: "Invalid or expired refresh token" });
         }
 
-        // Fetch user from DB and verify that the token matches the stored token
         const result = await pool.query("SELECT * FROM users WHERE id = $1", [decoded.userId]);
         if (result.rows.length === 0) {
             return res.status(403).json({ message: "User not found" });
@@ -139,30 +129,25 @@ const RefreshService = async (req: Request, res: Response) => {
 
         const user = result.rows[0];
         if (user.refresh_token !== refreshToken) {
-            // Token reuse or revoked session! Revoke access for security.
             await pool.query("UPDATE users SET refresh_token = NULL WHERE id = $1", [user.id]);
             res.clearCookie("accessToken", cookieOptions);
             res.clearCookie("refreshToken", cookieOptions);
             return res.status(403).json({ message: "Session expired or token reused" });
         }
 
-        // Generate new Access and Refresh tokens (Rotation)
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
 
-        // Update DB
         await pool.query("UPDATE users SET refresh_token = $1 WHERE id = $2", [newRefreshToken, user.id]);
 
-        // Set access token in HTTP-only cookie
         res.cookie("accessToken", newAccessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: 15 * 60 * 1000,
         });
 
-        // Set new refresh token in cookie
         res.cookie("refreshToken", newRefreshToken, {
             ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
         return res.status(200).json({
@@ -181,7 +166,6 @@ const LogoutService = async (req: Request, res: Response) => {
     try {
         const refreshToken = req.cookies?.refreshToken;
         if (refreshToken) {
-            // Remove refresh token from DB
             await pool.query("UPDATE users SET refresh_token = NULL WHERE refresh_token = $1", [refreshToken]);
         }
 
@@ -283,7 +267,6 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Authorization code is missing" });
         }
 
-        // 1. Exchange authorization code for access/id tokens
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
             headers: {
@@ -311,7 +294,6 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Access token not returned by Google" });
         }
 
-        // 2. Fetch user profile information using the access token
         const profileResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: {
                 Authorization: `Bearer ${accessTokenGoogle}`
@@ -331,7 +313,6 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Email not provided by Google account" });
         }
 
-        // 3. Find or create user in local database
         let userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         let user: any;
 
@@ -354,25 +335,21 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
             user = userResult.rows[0];
         }
 
-        // 4. Generate application session tokens
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
 
-        // Update database refresh token
         await pool.query("UPDATE users SET refresh_token = $1 WHERE id = $2", [refreshToken, user.id]);
 
-        // 5. Set session cookies
         res.cookie("accessToken", accessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60 * 1000 // 15 mins
+            maxAge: 15 * 60 * 1000,
         });
 
         res.cookie("refreshToken", refreshToken, {
             ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        // 6. Redirect back to frontend dashboard
         return res.redirect(CLIENT_REDIRECT_URL);
     } catch (error: any) {
         console.error("Google Callback Error:", error.message);
