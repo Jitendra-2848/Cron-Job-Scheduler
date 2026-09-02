@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '';
+const API_BASE_URL = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/$/, '');
 
 function getHeaders(customHeaders: Record<string, string> = {}) {
   const token = localStorage.getItem('cronmaster_token');
