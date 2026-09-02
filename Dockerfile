@@ -15,12 +15,8 @@ COPY services/api ./api
 COPY services/scheduler ./scheduler
 COPY services/worker ./worker
 
-RUN cd api && npm run build
-RUN cd scheduler && npm run build
-RUN cd worker && npm run build
-
 ENV NODE_ENV=production
 ENV PORT=8000
 EXPOSE 8000
 
-CMD ["sh", "-c", "node /app/api/dist/index.js & node /app/scheduler/dist/index.js & node /app/worker/dist/index.js & wait -n"]
+CMD ["sh", "-c", "cd /app/api && npx tsx src/index.ts & cd /app/scheduler && npx tsx src/index.ts & cd /app/worker && npx tsx src/index.ts & wait"]
