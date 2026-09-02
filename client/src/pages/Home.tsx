@@ -25,7 +25,7 @@ export const Home: React.FC = () => {
   const totalExecs = executionLogs.length;
   const successfulExecs = executionLogs.filter(l => l.status === 'success').length;
   const failedExecs = executionLogs.filter(l => l.status === 'failed').length;
-  const successRate = totalExecs > 0 ? Math.round((successfulExecs / totalExecs) * 100) : 100;
+  const successRate = totalExecs > 0 ? Math.round((successfulExecs / totalExecs) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12 max-w-6xl">

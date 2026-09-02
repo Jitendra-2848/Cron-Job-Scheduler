@@ -189,8 +189,8 @@ export const HistoryPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 font-medium">HTTP Code</span>
-                  <span className={`font-bold font-mono ${selectedLog.exitCode === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {selectedLog.exitCode === 0 ? '200 OK' : '500 Server Error'}
+                  <span className={`font-bold font-mono ${selectedLog.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    {selectedLog.exitCode > 0 ? `${selectedLog.exitCode} ${selectedLog.status === 'success' ? 'OK' : 'Error'}` : (selectedLog.status === 'success' ? '200 OK' : 'Failed')}
                   </span>
                 </div>
               </div>
@@ -202,7 +202,7 @@ export const HistoryPage: React.FC = () => {
                     Target Endpoint
                   </span>
                   <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 break-all block mt-1">
-                    POST {selectedLog.command.split(' ')[0] || '/api/backup'}
+                    {selectedLog.command}
                   </span>
                 </div>
               </div>
