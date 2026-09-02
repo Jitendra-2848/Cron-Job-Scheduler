@@ -4,7 +4,6 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { SearchModal } from './SearchModal';
 import { ToastContainer } from './Toast';
-import { Toaster } from 'react-hot-toast';
 
 export const LayoutContent: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);

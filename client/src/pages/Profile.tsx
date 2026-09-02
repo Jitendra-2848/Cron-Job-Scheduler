@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Laptop, Save, Camera, Loader2 } from 'lucide-react';
+import { User, Laptop, Save, Camera, Loader2, Sparkles } from 'lucide-react';
 import { useCron } from '../context/CronContext';
-import { FeatureModal } from '../components/FeatureModal';
 import { uploadImageToCloudinary } from '../utils/cloudinary';
 import toast from 'react-hot-toast';
 
@@ -14,11 +13,6 @@ const Profile: React.FC = () => {
   const [timezone, setTimezone] = useState(user.timezone);
   const [avatar, setAvatar] = useState(user.avatar);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [twoFactor] = useState(user.twoFactorEnabled);
-  const [show2FAModal, setShow2FAModal] = useState(false);
-
-  const [currentPass, setCurrentPass] = useState('');
-  const [newPass, setNewPass] = useState('');
 
   useEffect(() => {
     setName(user.name);
@@ -53,7 +47,7 @@ const Profile: React.FC = () => {
       email,
       phone,
       timezone,
-      twoFactorEnabled: twoFactor
+      avatar
     });
   };
 
@@ -66,7 +60,7 @@ const Profile: React.FC = () => {
           User Profile
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Manage your personal information, credentials, and security preferences.
+          Manage your personal profile information, avatar, and active sessions.
         </p>
       </div>
 
@@ -95,7 +89,7 @@ const Profile: React.FC = () => {
           <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
         </div>
 
-        <div className="flex-1 text-center sm:text-left">
+        <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
               {user.name}
@@ -104,8 +98,12 @@ const Profile: React.FC = () => {
               {user.role}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {user.email} • Account created {user.joinedDate}
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {user.email} &bull; Account created {user.joinedDate}
+          </p>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 justify-center sm:justify-start">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Hover on profile picture to upload a custom avatar to Cloudinary</span>
           </p>
         </div>
       </div>
@@ -129,7 +127,7 @@ const Profile: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Full Name
+                Full Name / Username
               </label>
               <input
                 type="text"
@@ -157,6 +155,7 @@ const Profile: React.FC = () => {
               </label>
               <input
                 type="text"
+                placeholder="+1 (555) 000-0000"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:border-emerald-500"
@@ -181,130 +180,63 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        {/* Security & Password */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-5">
+        {/* Active Session Device */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-500" />
+            <Laptop className="w-5 h-5 text-emerald-500" />
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
-                Security Settings
+                Active Session
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Manage passwords, 2FA, and active session devices
+                Current authenticated browser session
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Current Password
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••••••"
-                value={currentPass}
-                onChange={(e) => setCurrentPass(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:border-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                New Password
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••••••"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          {/* 2FA Switch */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
-                Two-Factor Authentication (2FA)
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Secure your account with TOTP authenticator app verification
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShow2FAModal(true);
-              }}
-              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
-                twoFactor ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
-              }`}
-            >
-              <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                  twoFactor ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Active Sessions */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-              Active Sessions
-            </h4>
-            <div className="space-y-2">
-              <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-3">
-                  <Laptop className="w-5 h-5 text-emerald-500" />
-                  <div>
-                    <div className="font-semibold text-slate-900 dark:text-white">
-                      Chrome on Current Device
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      Active Session &bull; Managed via Session Cookies
-                    </div>
-                  </div>
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              <Laptop className="w-5 h-5 text-emerald-500" />
+              <div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  Current Browser Session
                 </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold text-[10px]">
-                  Active
-                </span>
+                <div className="text-[11px] text-slate-400">
+                  Protected with HTTP-Only Cookie Authentication
+                </div>
               </div>
             </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold text-[10px]">
+              Active
+            </span>
           </div>
-
         </div>
 
         {/* Buttons Bar */}
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors"
+            onClick={() => {
+              setName(user.name);
+              setEmail(user.email);
+              setPhone(user.phone);
+              setTimezone(user.timezone);
+            }}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
           >
-            Cancel
+            Reset
           </button>
 
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            Save Changes
+            Save Profile
           </button>
         </div>
 
       </form>
-
-      {/* 2FA Feature Modal Pop-Up */}
-      <FeatureModal
-        isOpen={show2FAModal}
-        onClose={() => setShow2FAModal(false)}
-        featureName="Two-Factor Authentication (2FA)"
-        description="2FA authenticator verification is currently in development and will be enabled in the upcoming CronMaster release."
-      />
 
     </div>
   );

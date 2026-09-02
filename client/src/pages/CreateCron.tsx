@@ -22,6 +22,7 @@ export const CreateCron: React.FC = () => {
   const [headers, setHeaders] = useState<HeaderItem[]>([
     { key: 'Content-Type', value: 'application/json' }
   ]);
+  const [payloadStr, setPayloadStr] = useState('{\n  "source": "cronmaster"\n}');
   const [retries, setRetries] = useState(3);
   const [timeout, setTimeoutVal] = useState(30);
   const [timezone, setTimezone] = useState('UTC');
@@ -65,6 +66,16 @@ export const CreateCron: React.FC = () => {
       return;
     }
 
+    let parsedPayload: any = {};
+    if (method !== 'GET' && method !== 'DELETE' && payloadStr.trim()) {
+      try {
+        parsedPayload = JSON.parse(payloadStr);
+      } catch {
+        showToast('Invalid JSON in Request Body payload', 'error');
+        return;
+      }
+    }
+
     addCronJob({
       name,
       description,
@@ -73,6 +84,7 @@ export const CreateCron: React.FC = () => {
       commandType: 'webhook',
       webhookUrl: endpoint,
       method: method,
+      payload: parsedPayload,
       command: `curl -X ${method} ${endpoint} ${headers.map(h => `-H "${h.key}: ${h.value}"`).join(' ')}`,
       status: 'active',
       nextRun: 'In scheduled window',
@@ -212,6 +224,22 @@ export const CreateCron: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {/* JSON Payload (for POST/PUT/PATCH) */}
+          {(method === 'POST' || method === 'PUT') && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+              <label className="block text-slate-500 font-semibold text-xs">
+                Request Body (JSON Payload)
+              </label>
+              <textarea
+                rows={4}
+                value={payloadStr}
+                onChange={(e) => setPayloadStr(e.target.value)}
+                placeholder='{"key": "value"}'
+                className="w-full px-3 py-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 font-mono text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0A8F63]"
+              />
+            </div>
+          )}
         </div>
 
         {/* Schedule Editor Box */}
