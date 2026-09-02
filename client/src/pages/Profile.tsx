@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Laptop, Save } from 'lucide-react';
+import { User, Shield, Laptop, Save, Camera, Loader2 } from 'lucide-react';
 import { useCron } from '../context/CronContext';
 import { FeatureModal } from '../components/FeatureModal';
+import { uploadImageToCloudinary } from '../utils/cloudinary';
+import toast from 'react-hot-toast';
 
 const Profile: React.FC = () => {
   const { user, updateUserProfile } = useCron();
@@ -10,6 +12,8 @@ const Profile: React.FC = () => {
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone);
   const [timezone, setTimezone] = useState(user.timezone);
+  const [avatar, setAvatar] = useState(user.avatar);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [twoFactor] = useState(user.twoFactorEnabled);
   const [show2FAModal, setShow2FAModal] = useState(false);
 
@@ -21,7 +25,26 @@ const Profile: React.FC = () => {
     setEmail(user.email);
     setPhone(user.phone);
     setTimezone(user.timezone);
+    if (user.avatar) setAvatar(user.avatar);
   }, [user]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setAvatar(url);
+      updateUserProfile({ avatar: url });
+      toast.success('Avatar image uploaded to Cloudinary!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Cloudinary upload failed');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
