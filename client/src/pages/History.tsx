@@ -213,7 +213,7 @@ export const HistoryPage: React.FC = () => {
                   Console Output Logs
                 </span>
                 <div className="bg-slate-950 rounded border border-slate-850 p-3 font-mono text-[11px] text-slate-200 space-y-1 overflow-x-auto leading-relaxed shadow-inner max-h-48">
-                  {selectedLog.logs.map((logLine, idx) => (
+                  {selectedLog.logs.map((logLine: string, idx: number) => (
                     <div key={idx} className="whitespace-pre-wrap break-all">
                       {logLine}
                     </div>

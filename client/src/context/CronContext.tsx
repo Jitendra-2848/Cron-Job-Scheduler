@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CronJob, ExecutionLog, SystemService, UserProfile, CronStatus } from '../types/cron';
 import { fetchJobs, createJob, updateJob, deleteJob, fetchMeUser, fetchExecutions, triggerJobRun, type BackendJob, type BackendExecution } from '../services/api';
+import { parseCronExpression } from '../utils/cronParser';
 
 const INITIAL_EXECUTION_LOGS: ExecutionLog[] = [];
 
@@ -55,26 +56,27 @@ interface CronContextType {
 const CronContext = createContext<CronContextType | undefined>(undefined);
 
 function mapBackendToCronJob(bj: BackendJob): CronJob {
+  const human = parseCronExpression(bj.cron_expression);
   return {
     id: String(bj.id),
     name: bj.name,
     description: `HTTP Endpoint: ${bj.method || 'GET'} ${bj.url}`,
     schedule: bj.cron_expression,
-    humanSchedule: bj.cron_expression,
+    humanSchedule: human,
     commandType: 'webhook',
     command: `${bj.method || 'GET'} ${bj.url}`,
     webhookUrl: bj.url,
     method: bj.method || 'GET',
     payload: bj.payload,
     status: (bj.status as CronStatus) || 'active',
-    nextRun: 'Managed by Scheduler',
+    nextRun: bj.next_run_at ? new Date(bj.next_run_at).toLocaleString() : 'Managed by Scheduler',
     createdAt: bj.created_at ? new Date(bj.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     category: 'Distributed Webhook',
     timeoutSeconds: 10,
     maxRetries: bj.retries ?? 3,
     timezone: 'Asia/Kolkata',
-    executionCount: 1,
-    successRate: 100,
+    executionCount: 0,
+    successRate: 0,
   };
 }
 

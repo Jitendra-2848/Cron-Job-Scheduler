@@ -140,74 +140,85 @@ export const CronJobs: React.FC = () => {
         {/* Tab Panels */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-6 text-xs transition-colors">
           
-          {detailTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 leading-relaxed">
-              <div className="space-y-4">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                    Cron Schedule
-                  </span>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded font-bold text-emerald-700 dark:text-emerald-400">
-                      {job.schedule}
+          {detailTab === 'overview' && (() => {
+            const thisJobLogs = executionLogs.filter(l => l.jobId === job.id || l.jobName === job.name);
+            const totalThisExecs = thisJobLogs.length;
+            const successThisExecs = thisJobLogs.filter(l => l.status === 'success').length;
+            const realSuccessRate = totalThisExecs > 0 ? Math.round((successThisExecs / totalThisExecs) * 100) : 0;
+            const lastLogThis = thisJobLogs[0];
+            const lastExecTime = lastLogThis ? lastLogThis.startedAt : 'Never executed';
+            const nextExecTime = job.nextRun || 'In scheduled window';
+            const endpointStr = `${job.method || 'GET'} ${job.webhookUrl || job.command.replace(/^(GET|POST|PUT|DELETE)\s+/, '')}`;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 leading-relaxed">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                      Cron Schedule
                     </span>
-                    <span className="text-slate-600 dark:text-slate-350 font-medium">
-                      ({job.humanSchedule})
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded font-bold text-emerald-700 dark:text-emerald-400">
+                        {job.schedule}
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-350 font-medium">
+                        ({job.humanSchedule})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                      HTTP Target Endpoint
+                    </span>
+                    <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded block mt-1 text-slate-700 dark:text-slate-300 break-all font-semibold">
+                      {endpointStr}
                     </span>
                   </div>
                 </div>
 
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                    HTTP Target Endpoint
-                  </span>
-                  <span className="font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded block mt-1 text-slate-700 dark:text-slate-300 break-all font-semibold">
-                    {job.commandType === 'webhook' ? `POST ${job.webhookUrl}` : `RUN COMMAND ${job.command}`}
-                  </span>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                        Next Execution
+                      </span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block mt-1 font-mono text-[11px]">
+                        {nextExecTime}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                        Last Execution
+                      </span>
+                      <span className="text-slate-650 dark:text-slate-355 block mt-1 font-mono text-[11px]">
+                        {lastExecTime}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                        Success Rate
+                      </span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 block mt-1">
+                        {realSuccessRate}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                        Total Executions
+                      </span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block mt-1">
+                        {totalThisExecs}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      Next Execution
-                    </span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 block mt-1">
-                      In 18 minutes
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      Last Execution
-                    </span>
-                    <span className="text-slate-650 dark:text-slate-355 block mt-1">
-                      42 minutes ago
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      Success Rate
-                    </span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 block mt-1">
-                      {job.successRate}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                      Total Executions
-                    </span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 block mt-1">
-                      {job.executionCount}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {detailTab === 'executions' && (
             <div className="space-y-3">

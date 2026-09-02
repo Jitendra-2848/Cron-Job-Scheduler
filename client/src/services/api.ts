@@ -9,6 +9,7 @@ export interface BackendJob {
   payload?: any;
   retries?: number;
   status?: string;
+  next_run_at?: string;
   created_at?: string;
 }
 
