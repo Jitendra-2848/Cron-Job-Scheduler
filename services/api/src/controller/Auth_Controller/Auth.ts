@@ -14,6 +14,7 @@ export const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? ("none" as const) : ("lax" as const),
+    partitioned: isProduction,
 };
 
 const RegisterService = async (req: Request, res: Response) => {
