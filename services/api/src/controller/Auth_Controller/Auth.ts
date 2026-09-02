@@ -1,17 +1,24 @@
 import type { Request, Response } from "express";
-import { generateAccessToken, generateRefreshToken } from "../../middlewares/TokenProvider.ts";
-import { pool } from "../../db/pool.ts";
+import { generateAccessToken, generateRefreshToken } from "../../middlewares/TokenProvider.js";
+import { pool } from "../../db/pool.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import type { AuthenticatedRequest } from "../../middlewares/TokenValidation.ts";
+import type { AuthenticatedRequest } from "../../middlewares/TokenValidation.js";
 import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_123";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+export const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ("none" as const) : ("lax" as const),
+};
+
 const RegisterService = async (req: Request, res: Response) => {
     try {
         const { username, password, email } = req.body;
-        console.log(req.body);
         if (!username || !password) {
             return res.status(400).json({ message: "Username and password are required" });
         }
@@ -21,7 +28,10 @@ const RegisterService = async (req: Request, res: Response) => {
         }
 
         // Check if username or email already exists
-        const userCheck = await pool.query("SELECT * FROM users WHERE username = $1 OR (email = $2 AND email IS NOT NULL)", [username, email || '']);
+        const userCheck = await pool.query(
+            "SELECT id FROM users WHERE username = $1 OR (email = $2 AND email IS NOT NULL)",
+            [username, email || ""]
+        );
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ message: "Username or email is already taken" });
         }
@@ -40,7 +50,7 @@ const RegisterService = async (req: Request, res: Response) => {
             user: result.rows[0]
         });
     } catch (error: any) {
-        console.error("Register Error:", error);
+        console.error("Register Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -50,7 +60,6 @@ const RegisterService = async (req: Request, res: Response) => {
 
 const LoginService = async (req: Request, res: Response) => {
     try {
-        console.log(req.body);
         const { username, password } = req.body;
 
         if (!username || !password) {
@@ -80,16 +89,13 @@ const LoginService = async (req: Request, res: Response) => {
 
         // Set access token in HTTP-only cookie
         res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 15 * 60 * 1000,
+            ...cookieOptions,
+            maxAge: 15 * 60 * 1000, // 15 minutes
         });
+
         // Set refresh token in HTTP-only cookie
         res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            ...cookieOptions,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -102,7 +108,7 @@ const LoginService = async (req: Request, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error("Login Error:", error);
+        console.error("Login Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -121,7 +127,7 @@ const RefreshService = async (req: Request, res: Response) => {
         let decoded: any;
         try {
             decoded = jwt.verify(refreshToken, JWT_SECRET);
-        } catch (err) {
+        } catch {
             return res.status(403).json({ message: "Invalid or expired refresh token" });
         }
 
@@ -135,15 +141,12 @@ const RefreshService = async (req: Request, res: Response) => {
         if (user.refresh_token !== refreshToken) {
             // Token reuse or revoked session! Revoke access for security.
             await pool.query("UPDATE users SET refresh_token = NULL WHERE id = $1", [user.id]);
-            res.clearCookie("refreshToken", {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax"
-            });
+            res.clearCookie("accessToken", cookieOptions);
+            res.clearCookie("refreshToken", cookieOptions);
             return res.status(403).json({ message: "Session expired or token reused" });
         }
 
-        // Generate new Access and Refresh tokens (Rotation!)
+        // Generate new Access and Refresh tokens (Rotation)
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
 
@@ -152,17 +155,13 @@ const RefreshService = async (req: Request, res: Response) => {
 
         // Set access token in HTTP-only cookie
         res.cookie("accessToken", newAccessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            ...cookieOptions,
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
 
         // Set new refresh token in cookie
         res.cookie("refreshToken", newRefreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            ...cookieOptions,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -170,7 +169,7 @@ const RefreshService = async (req: Request, res: Response) => {
             message: "Token refreshed successfully"
         });
     } catch (error: any) {
-        console.error("Refresh Error:", error);
+        console.error("Refresh Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -186,21 +185,12 @@ const LogoutService = async (req: Request, res: Response) => {
             await pool.query("UPDATE users SET refresh_token = NULL WHERE refresh_token = $1", [refreshToken]);
         }
 
-        res.clearCookie("accessToken", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
-        });
-
-        res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
-        });
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
 
         return res.status(200).json({ message: "Logged out successfully" });
     } catch (error: any) {
-        console.error("Logout Error:", error);
+        console.error("Logout Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -227,7 +217,7 @@ const MeService = async (req: AuthenticatedRequest, res: Response) => {
             user: result.rows[0]
         });
     } catch (error: any) {
-        console.error("Me Error:", error);
+        console.error("Me Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -262,7 +252,7 @@ const UpdateProfileService = async (req: AuthenticatedRequest, res: Response) =>
             user: result.rows[0]
         });
     } catch (error: any) {
-        console.error("Update Profile Error:", error);
+        console.error("Update Profile Error:", error.message);
         return res.status(500).json({
             message: "Internal server error",
             error: error.message
@@ -281,7 +271,7 @@ const GoogleRedirectService = async (req: Request, res: Response) => {
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI || "")}&response_type=code&scope=${encodeURIComponent(scopes.join(" "))}&access_type=offline&prompt=consent`;
         return res.redirect(authUrl);
     } catch (error: any) {
-        console.error("Google Redirect Error:", error);
+        console.error("Google Redirect Error:", error.message);
         return res.status(500).json({ message: "Internal server error redirecting to Google" });
     }
 };
@@ -329,7 +319,7 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
         });
 
         if (!profileResponse.ok) {
-            console.error("Google UserInfo Fetch Failed:", await profileResponse.text());
+            console.error("Google UserInfo Fetch Failed");
             return res.status(400).json({ message: "Failed to retrieve user profile from Google" });
         }
 
@@ -373,23 +363,19 @@ const GoogleCallbackService = async (req: Request, res: Response) => {
 
         // 5. Set session cookies
         res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            ...cookieOptions,
             maxAge: 15 * 60 * 1000 // 15 mins
         });
 
         res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            ...cookieOptions,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
         // 6. Redirect back to frontend dashboard
         return res.redirect(CLIENT_REDIRECT_URL);
     } catch (error: any) {
-        console.error("Google Callback Error:", error);
+        console.error("Google Callback Error:", error.message);
         return res.status(500).json({ message: "Internal server error during Google authentication", error: error.message });
     }
 };

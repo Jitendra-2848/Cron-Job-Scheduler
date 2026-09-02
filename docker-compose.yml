@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: cronmaster_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: cronMaster
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
+      POSTGRES_DB: ${POSTGRES_DB:-cronMaster}
     ports:
       - "5432:5432"
     volumes:
@@ -26,11 +26,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/cronMaster
-      - DATABASE_URI=postgresql://postgres:password123@postgres:5432/cronMaster
-      - REDIS_URL=redis://redis:6379
-      - REDIS_URI=redis://redis:6379
       - PORT=8000
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - DATABASE_URI=${DATABASE_URI:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
+      - JWT_SECRET=${JWT_SECRET:-fallback_secret_key_123}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+      - CLIENT_REDIRECT_URL=${CLIENT_REDIRECT_URL:-http://localhost:5173/dashboard}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     depends_on:
       - postgres
       - redis
@@ -40,10 +46,10 @@ services:
       context: ./services/scheduler
     container_name: cronmaster_scheduler
     environment:
-      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/cronMaster
-      - DATABASE_URI=postgresql://postgres:password123@postgres:5432/cronMaster
-      - REDIS_URL=redis://redis:6379
-      - REDIS_URI=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - DATABASE_URI=${DATABASE_URI:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
     depends_on:
       - postgres
       - redis
@@ -53,10 +59,10 @@ services:
       context: ./services/worker
     container_name: cronmaster_worker
     environment:
-      - DATABASE_URL=postgresql://postgres:password123@postgres:5432/cronMaster
-      - DATABASE_URI=postgresql://postgres:password123@postgres:5432/cronMaster
-      - REDIS_URL=redis://redis:6379
-      - REDIS_URI=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - DATABASE_URI=${DATABASE_URI:-postgresql://postgres:password123@postgres:5432/cronMaster}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
     depends_on:
       - postgres
       - redis

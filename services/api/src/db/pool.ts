@@ -1,8 +1,14 @@
-import "../config/env.js"
+import "../config/env.js";
 import { Pool } from "pg";
 
+const connectionString = process.env.DATABASE_URL || process.env.DATABASE_URI;
+const isLocalhost = connectionString?.includes("localhost") || connectionString?.includes("127.0.0.1") || connectionString?.includes("postgres:5432");
+
 export const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || process.env.DATABASE_URI,
+    connectionString,
+    ssl: process.env.NODE_ENV === "production" && !isLocalhost
+        ? { rejectUnauthorized: false }
+        : undefined,
 });
 
 pool.on("connect", () => {
@@ -71,11 +77,10 @@ export async function _init_db() {
         console.log("Database schema & columns (users, jobs, executions) verified successfully.");
         client.release();
     } catch (err: any) {
-        console.error('❌ Database connection error:', err.message);
-        process.exit(1);
+        console.error("Database connection error:", err.message);
     }
 }
 
 pool.on("error", (error) => {
-    console.log(error.message);
+    console.error("PostgreSQL pool error:", error.message);
 });
