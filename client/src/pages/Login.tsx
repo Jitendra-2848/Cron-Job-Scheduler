@@ -63,7 +63,7 @@ const Login: React.FC = () => {
           <div>
             <span className="font-extrabold text-xl tracking-tight text-white">CronMaster</span>
             <span className="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              Distributed Engine
+              Task Scheduler
             </span>
           </div>
         </div>
@@ -72,10 +72,10 @@ const Login: React.FC = () => {
         <div className="relative z-10 my-auto space-y-6 max-w-lg">
           <div className="space-y-2">
             <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Distributed Task Scheduler & Execution Engine
+              Reliable Cron Jobs & Webhook Scheduler
             </h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              High-concurrency webhook management, automated retries, and real-time execution monitoring for dev teams.
+              Schedule recurring tasks, trigger webhooks automatically, and inspect logs whenever your jobs run.
             </p>
           </div>
 
@@ -85,8 +85,8 @@ const Login: React.FC = () => {
                 <Zap className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Sub-Millisecond Queue Concurrency</h3>
-                <p className="text-xs text-slate-400 mt-0.5">High-performance worker queues for heavy background workloads.</p>
+                <h3 className="text-sm font-semibold text-white">Fast Task Execution</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Reliable queue execution for background jobs and API webhooks.</p>
               </div>
             </div>
 
@@ -95,8 +95,8 @@ const Login: React.FC = () => {
                 <Activity className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Telemetry & Live Execution Logs</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Track response latency, HTTP exit codes, and detailed trace logs.</p>
+                <h3 className="text-sm font-semibold text-white">Live Run History & Logs</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Inspect exact HTTP response status, execution times, and payload logs.</p>
               </div>
             </div>
 
@@ -105,8 +105,8 @@ const Login: React.FC = () => {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Fault Tolerant Exponential Retries</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Automatic failovers, dead-letter handling, and exponential backoffs.</p>
+                <h3 className="text-sm font-semibold text-white">Automatic Retry Handling</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Failed requests are automatically retried to ensure reliable delivery.</p>
               </div>
             </div>
           </div>
@@ -114,10 +114,10 @@ const Login: React.FC = () => {
 
         {/* Footer */}
         <div className="relative z-10 text-xs text-slate-500 flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} CronMaster System</span>
+          <span>&copy; {new Date().getFullYear()} CronMaster</span>
           <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Cluster Operational
+            System Operational
           </span>
         </div>
       </div>

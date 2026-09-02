@@ -277,19 +277,19 @@ const Register: React.FC = () => {
                     <div className="space-y-3 pt-2">
                         <div className="flex items-center gap-3 text-sm text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <span>Standard 5-part cron syntax expression support</span>
+                            <span>Standard 5-part cron schedule expressions (* * * * *)</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <span>Automated exponential backoff retries on failed webhooks</span>
+                            <span>Automatic retries when your webhook returns an error</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <span>HTTP Method configuration (GET, POST, PUT, DELETE) with custom JSON payloads</span>
+                            <span>Full HTTP method support (GET, POST, PUT, DELETE) with custom payloads</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                            <span>High-availability persistence & automated worker queue</span>
+                            <span>Persistent job history and background task processing</span>
                         </div>
                     </div>
                 </div>
