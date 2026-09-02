@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { SearchModal } from './SearchModal';
 import { ToastContainer } from './Toast';
+import { Toaster } from 'react-hot-toast';
 
 export const LayoutContent: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -36,6 +37,7 @@ export const LayoutContent: React.FC = () => {
       {/* Global Modals, Modals & Notifications */}
       <SearchModal />
       <ToastContainer />
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
 
     </div>
   );

@@ -21,11 +21,11 @@ export interface individual_job {
 export interface createJobRequest {
     name: string,
     url: string,
-    method: string | "GET" | "POST" | "DELETE" | "UPDATE" ,
-    cron_expression: string | null,
-    payload?: string,
-    retries?: string,
-    status?: "active" | "rejected" | "pending",
+    method?: string,
+    cron_expression: string,
+    payload?: any,
+    retries?: number,
+    status?: "active" | "paused" | "disabled" | string,
 }
 
 export interface postJobInterface{

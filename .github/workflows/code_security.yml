@@ -1,0 +1,35 @@
+name: Security Audit & Code Quality
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  security-audit:
+    name: Dependency Security & Code Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Audit Client Dependencies
+        run: |
+          cd client
+          npm audit --audit-level=high || true
+
+      - name: Audit Backend Services
+        run: |
+          cd services/api
+          npm audit --audit-level=high || true

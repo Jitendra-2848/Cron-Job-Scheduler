@@ -144,7 +144,7 @@ export async function delete_job(req: Request, res: Response) {
 
 export async function update_job(req: Request<{ id: string }, {}, Partial<createJobRequest>>, res: Response) {
     const id = req.params.id;
-    const { name, url, method, cron_expression, payload, retries } = req.body;
+    const { name, url, method, cron_expression, payload, retries, status } = req.body;
     const client = await pool.connect();
     try {
         await client.query("BEGIN");
@@ -155,9 +155,10 @@ export async function update_job(req: Request<{ id: string }, {}, Partial<create
                  method = COALESCE($3, method),
                  cron_expression = COALESCE($4, cron_expression),
                  payload = COALESCE($5, payload),
-                 retries = COALESCE($6, retries)
-             WHERE id = $7 RETURNING *`,
-            [name, url, method, cron_expression, payload, retries, id]
+                 retries = COALESCE($6, retries),
+                 status = COALESCE($7, status)
+             WHERE id = $8 RETURNING *`,
+            [name, url, method, cron_expression, payload, retries, status, id]
         );
 
         if (data.rowCount === 0) {
