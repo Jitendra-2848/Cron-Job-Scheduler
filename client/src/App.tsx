@@ -22,11 +22,11 @@ const App: React.FC = () => {
         <CronProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public Public Public Public Public Auth Routes */}
+              {/* Auth Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
-              {/* Private Protected Routes */}
+              {/* Protected Application Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />

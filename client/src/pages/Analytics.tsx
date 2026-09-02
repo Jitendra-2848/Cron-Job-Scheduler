@@ -150,10 +150,8 @@ export const AnalyticsPage: React.FC = () => {
         runJobNow={runJobNow}
       />
 
-      {/* Two-Column Section: Where Jobs Run vs Execution Time Breakdown */}
+      {/* Execution Locations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* 1. WHERE JOBS ARE RUN (Target Execution Environments & Nodes) */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-5">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
             <Globe className="w-5 h-5 text-emerald-500" />

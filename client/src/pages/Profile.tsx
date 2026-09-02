@@ -72,12 +72,26 @@ const Profile: React.FC = () => {
 
       {/* Main Profile Header Card */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs flex flex-col sm:flex-row items-center gap-6">
-        <div className="relative">
+        <div className="relative group cursor-pointer">
           <img
-            src={user.avatar}
+            src={avatar || user.avatar}
             alt={user.name}
-            className="w-24 h-24 rounded-full object-cover border-2 border-emerald-500 shadow-md"
+            className="w-24 h-24 rounded-full object-cover border-2 border-emerald-500 shadow-md transition-opacity group-hover:opacity-85"
           />
+          <label className="absolute inset-0 rounded-full flex items-center justify-center bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
+            {isUploadingAvatar ? (
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              disabled={isUploadingAvatar}
+              className="hidden"
+            />
+          </label>
           <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
         </div>
 

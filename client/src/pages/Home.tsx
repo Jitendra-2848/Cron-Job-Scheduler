@@ -9,7 +9,7 @@ export const Home: React.FC = () => {
   
   const [syncTime, setSyncTime] = useState(12);
 
-  // Auto-increment sync timer for realism
+  // Sync status timer
   useEffect(() => {
     const interval = setInterval(() => {
       setSyncTime((prev) => (prev >= 59 ? 0 : prev + 1));
