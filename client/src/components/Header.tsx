@@ -6,7 +6,6 @@ import {
   Bell, 
   Sun, 
   Moon, 
-  Monitor,
   ChevronRight, 
   Check, 
   AlertTriangle 
@@ -28,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const path = location.pathname;
-  let pageTitle = 'Home Overview';
+  let pageTitle = 'Overview';
 
   if (path === '/cron-jobs') {
     pageTitle = 'Cron Jobs';
@@ -37,54 +36,68 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
   } else if (path === '/history') {
     pageTitle = 'Execution History';
   } else if (path === '/analytics') {
-    pageTitle = 'Execution Analytics';
+    pageTitle = 'Analytics';
   } else if (path === '/profile') {
     pageTitle = 'User Profile';
   } else if (path === '/settings') {
-    pageTitle = 'System Settings';
+    pageTitle = 'Settings';
   }
 
   const notifications: any[] = [];
 
+  const toggleTheme = () => {
+    if (theme === 'dark') {
+      setTheme('light');
+    } else {
+      setTheme('dark');
+    }
+  };
+
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 px-4 sm:px-6 flex items-center justify-between transition-colors shadow-none">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 px-3 sm:px-6 flex items-center justify-between transition-colors">
       
-      {/* Left Navigation Breadcrumb */}
-      <div className="flex items-center gap-3">
+      {/* Left Navigation & Breadcrumb */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Toggle Hamburger button for Mobile */}
         <button
           onClick={() => setMobileOpen(true)}
-          className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
           aria-label="Open Navigation Sidebar"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+        {/* Desktop Breadcrumb */}
+        <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm font-medium truncate">
           <span className="text-slate-500 dark:text-slate-400">
             CronMaster
           </span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
-          <span className="text-slate-900 dark:text-white font-semibold">
+          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+          <span className="text-slate-900 dark:text-white font-semibold truncate">
             {pageTitle}
           </span>
         </div>
+
+        {/* Mobile Page Title Indicator */}
+        <span className="sm:hidden text-xs font-bold text-slate-900 dark:text-white truncate">
+          {pageTitle}
+        </span>
       </div>
 
-      {/* Right Toolbar Action Icons */}
-      <div className="flex items-center gap-2 sm:gap-3.5">
+      {/* Right Toolbar Action Items */}
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         
         {/* Search Trigger Input Button */}
         <button
           onClick={() => setSearchModalOpen(true)}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-400 text-xs transition-colors"
+          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 text-xs transition-colors cursor-pointer"
+          title="Search jobs (⌘K)"
         >
           <Search className="w-4 h-4 text-slate-400" />
-          <span className="hidden sm:inline text-slate-500 dark:text-slate-400">
-            Search cron jobs...
+          <span className="hidden md:inline text-slate-500 dark:text-slate-400 font-medium">
+            Search jobs...
           </span>
-          <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-400 font-normal">
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-400 font-normal">
             ⌘ K
           </kbd>
         </button>
@@ -93,24 +106,24 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-1.5 rounded text-slate-450 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title="Notifications"
           >
-            <Bell className="w-4.5 h-4.5" />
+            <Bell className="w-4 h-4" />
           </button>
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-lg z-50 overflow-hidden animate-fade-in">
+            <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
               <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
                 <span className="font-semibold text-xs text-slate-800 dark:text-white">Notifications</span>
               </div>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {notifications.length > 0 ? (
                   notifications.map(n => (
-                    <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors flex gap-2.5">
-                      <div className={`p-1.5 rounded shrink-0 h-fit mt-0.5 ${
-                        n.type === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
+                    <div key={n.id} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-2.5">
+                      <div className={`p-1.5 rounded-lg shrink-0 h-fit mt-0.5 ${
+                        n.type === 'error' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
                       }`}>
                         {n.type === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                       </div>
@@ -133,50 +146,24 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
           )}
         </div>
 
-        {/* Theme Mode Control: Light (Sun), Dark (Moon), System (Monitor) */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            className={`p-1.5 rounded-lg transition-all ${
-              theme === 'light'
-                ? 'bg-white dark:bg-slate-700 text-amber-500 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-            title="Light Mode"
-          >
-            <Sun className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            className={`p-1.5 rounded-lg transition-all ${
-              theme === 'dark'
-                ? 'bg-white dark:bg-slate-700 text-emerald-400 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-            title="Dark Mode"
-          >
-            <Moon className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('system')}
-            className={`p-1.5 rounded-lg transition-all ${
-              theme === 'system'
-                ? 'bg-white dark:bg-slate-700 text-blue-400 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-            title="System Mode"
-          >
-            <Monitor className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Quick Theme Toggle (Light / Dark) */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-slate-600" />
+          )}
+        </button>
 
-        {/* User Avatar */}
+        {/* User Profile Avatar */}
         <button
           onClick={() => navigate('/profile')}
-          className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-600/30 transition-all shrink-0 ml-1"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-500/30 transition-all shrink-0 cursor-pointer"
           title="User Profile"
         >
           <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
@@ -187,3 +174,5 @@ export const Header: React.FC<HeaderProps> = ({ setMobileOpen }) => {
     </header>
   );
 };
+
+export default Header;
