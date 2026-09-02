@@ -6,9 +6,7 @@ const isLocalhost = connectionString?.includes("localhost") || connectionString?
 
 export const pool = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === "production" && !isLocalhost
-        ? { rejectUnauthorized: false }
-        : undefined,
+    ssl: !isLocalhost ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on("connect", () => {

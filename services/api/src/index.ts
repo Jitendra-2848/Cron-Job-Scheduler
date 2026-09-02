@@ -9,26 +9,21 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 const allowedOrigins = [
+  "https://job-scheduler-2848.vercel.app",
   process.env.FRONTEND_URL,
   process.env.CLIENT_ORIGIN,
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
   "http://localhost:8000"
-].filter(Boolean) as string[];
+]
+  .filter(Boolean)
+  .map((url) => (url as string).trim().replace(/['"]/g, "").replace(/\/$/, "")) as string[];
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app") ||
-      process.env.NODE_ENV !== "production"
-    ) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS blocked origin: ${origin}`));
+    return callback(null, true);
   },
   credentials: true,
 }));

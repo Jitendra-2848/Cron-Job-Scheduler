@@ -8,13 +8,11 @@ import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_123";
 
-const isProduction = process.env.NODE_ENV === "production";
-
 export const cookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? ("none" as const) : ("lax" as const),
-    partitioned: isProduction,
+    secure: true,
+    sameSite: "none" as const,
+    partitioned: true,
 };
 
 const RegisterService = async (req: Request, res: Response) => {
@@ -266,8 +264,8 @@ const UpdateProfileService = async (req: AuthenticatedRequest, res: Response) =>
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
-const CLIENT_REDIRECT_URL = process.env.CLIENT_REDIRECT_URL || "http://localhost:5173/dashboard";
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || "https://cronmaster-latest.onrender.com/auth/google/callback";
+const CLIENT_REDIRECT_URL = process.env.CLIENT_REDIRECT_URL || "https://job-scheduler-2848.vercel.app/dashboard";
 
 const GoogleRedirectService = async (req: Request, res: Response) => {
     try {
